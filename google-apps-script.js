@@ -91,11 +91,11 @@ function doPost(e) {
     sheet.appendRow(titularRow);
     var titularRowIndex = sheet.getLastRow();
     
-    // Formato estándar con el nombre y apellido en negrito (bold)
+    // Formato estándar con el nombre y apellido en negrito (bold) y color #4a5d4e
     var titularRange = sheet.getRange(titularRowIndex, 1, 1, titularRow.length);
     titularRange.setFontFamily("Arial");
     titularRange.setFontWeight("normal");
-    sheet.getRange(titularRowIndex, 1).setFontWeight("bold");
+    sheet.getRange(titularRowIndex, 1).setFontWeight("bold").setFontColor("#4a5d4e");
     
     // 2. FILAS DEBAJO DEL RESPONSABLE: Acompañantes con flecha
     if (Array.isArray(data.guests)) {
@@ -122,7 +122,7 @@ function doPost(e) {
         var compRange = sheet.getRange(compRowIndex, 1, 1, companionRow.length);
         compRange.setFontFamily("Arial");
         compRange.setFontWeight("normal");
-        sheet.getRange(compRowIndex, 1).setFontWeight("bold");
+        sheet.getRange(compRowIndex, 1).setFontWeight("normal").setFontColor("#555555");
       }
     }
     
