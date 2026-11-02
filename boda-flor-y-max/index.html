@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Boda Flor & Max | 21 de Marzo de 2027</title>
+  <meta name="description" content="Invitación de boda de Florencia y Maximiliano. 21 de Marzo de 2027 en Club de Campo María Antonia, Rosario.">
+  <meta name="theme-color" content="#4B5842">
+  
+  <!-- Open Graph / WhatsApp Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Boda Flor & Max • 21 de Marzo de 2027">
+  <meta property="og:description" content="¡Nos casamos! Acompáñanos a celebrar nuestro casamiento en Club de Campo María Antonia, Rosario.">
+  <meta property="og:image" content="assets/images/monograma-flor-y-max.jpg">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+
+  <!-- Google Fonts: Cormorant Garamond, Great Vibes, Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Great+Vibes&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Estilos del Sitio -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+  <!-- Canvas animado de pétalos sutiles -->
+  <canvas id="petals-canvas"></canvas>
+
+  <!-- Botón Flotante de Confirmación Rápida -->
+  <div class="floating-rsvp-btn">
+    <a href="confirmar.html" class="btn btn-primary btn-block">
+      <i class="fas fa-calendar-check"></i> Confirmar Asistencia
+    </a>
+  </div>
+
+  <div class="site-wrapper">
+
+    <!-- ==========================================
+         HERO SECTION: Portada de la Invitación
+         ========================================== -->
+    <header class="hero-section">
+      <div class="hero-top" style="margin-bottom: 20px;">
+        <!-- Monograma floral refinado en tamaño principal -->
+        <img src="assets/images/monograma-flor-y-max.jpg" alt="Flor & Max 21/03/2027" class="hero-monogram-img">
+
+        <div class="hero-date-pill">
+          <i class="far fa-calendar-alt"></i> 21 de Marzo de 2027 &bull; 15:00 hs
+        </div>
+      </div>
+
+      <!-- Marco de Foto de Portada con la foto real de los novios -->
+      <div class="hero-image-frame">
+        <img src="assets/images/foto-pareja.jpg" alt="Flor y Max Casamiento" loading="lazy">
+      </div>
+
+      <!-- Contador Regresivo -->
+      <div class="countdown-container">
+        <p class="countdown-label">Faltan tan solo</p>
+        <div class="countdown-boxes">
+          <div class="countdown-box">
+            <span class="countdown-number" id="countDays">--</span>
+            <span class="countdown-text">Días</span>
+          </div>
+          <div class="countdown-box">
+            <span class="countdown-number" id="countHours">--</span>
+            <span class="countdown-text">Hs</span>
+          </div>
+          <div class="countdown-box">
+            <span class="countdown-number" id="countMinutes">--</span>
+            <span class="countdown-text">Min</span>
+          </div>
+          <div class="countdown-box">
+            <span class="countdown-number" id="countSeconds">--</span>
+            <span class="countdown-text">Seg</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón de Agendar en Calendario -->
+      <div style="margin-top: 10px; width: 100%;">
+        <a id="btnGoogleCalendar" href="#" target="_blank" class="btn btn-secondary btn-block">
+          <i class="far fa-calendar-plus"></i> Agendar en Google Calendar
+        </a>
+      </div>
+    </header>
+
+    <!-- ==========================================
+         SECCIÓN: Versículo Bíblico
+         ========================================== -->
+    <section class="section section-alt">
+      <div class="verse-box">
+        <p class="verse-text">
+          «Y sobre todas estas cosas, vestíos de amor, que es el vínculo perfecto.»
+        </p>
+        <p class="verse-passage">
+          &bull; Colosenses 3:14 &bull;
+        </p>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECCIÓN: Dónde y Cuándo
+         ========================================== -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-icon">
+          <i class="fas fa-map-marker-alt"></i>
+        </div>
+        <h2 class="section-title">Dónde y Cuándo</h2>
+        <p class="section-subtitle">Queremos compartir con vos este momento tan especial en un entorno único</p>
+        <div class="divider-gold"></div>
+      </div>
+
+      <div class="event-card">
+        <div class="event-card-header">
+          <h3>Club de Campo María Antonia</h3>
+          <p style="font-size: 0.9rem; opacity: 0.95;">Rosario, Santa Fe</p>
+        </div>
+
+        <div class="event-card-body">
+          <div class="event-detail-item">
+            <i class="far fa-calendar-check"></i>
+            <div>
+              <strong>Domingo, 21 de Marzo de 2027</strong>
+            </div>
+          </div>
+
+          <div class="event-detail-item">
+            <i class="far fa-clock"></i>
+            <div>
+              <strong>15:00 hs (Puntual)</strong>
+              <div style="font-size: 0.8rem; color: var(--color-text-muted);">Te pedimos puntualidad para iniciar juntos la ceremonia</div>
+            </div>
+          </div>
+
+          <div class="event-detail-item">
+            <i class="fas fa-map-pin"></i>
+            <div>
+              <span>Amuchastegui 1388, Rosario</span>
+            </div>
+          </div>
+
+          <!-- Mapa Embebido de Google Maps -->
+          <div class="map-wrapper">
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3348.647334707198!2d-60.716174!3d-32.93393!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b653fddd03e5dd%3A0xcab83c957a370333!2sClub%20de%20Campo%20Mar%C3%ADa%20Antonia!5e0!3m2!1ses!2sar!4v1700000000000" 
+              allowfullscreen="" 
+              loading="lazy" 
+              referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+          </div>
+
+          <a href="https://maps.app.goo.gl/Q65edVmi1CyBBP6s6" target="_blank" class="btn btn-sage btn-block">
+            <i class="fas fa-directions"></i> Cómo Llegar (Google Maps)
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECCIÓN: Dress Code (Código de Vestimenta)
+         ========================================== -->
+    <section class="section section-alt">
+      <div class="section-header">
+        <div class="section-icon">
+          <i class="fas fa-user-tie"></i>
+        </div>
+        <h2 class="section-title">Dress Code</h2>
+        <div class="divider-gold"></div>
+      </div>
+
+      <div class="dress-code-card">
+        <div class="dress-code-badge">
+          Elegante sport
+        </div>
+        <p style="font-size: 1.05rem; color: var(--color-dark); margin: 20px auto 0; max-width: 440px; line-height: 1.6; font-style: italic;">
+          «Les invitamos a elegir un look elegante y sofisticado, ideal para una celebración especial al aire libre. Vestimenta formal, pero sin necesidad de gala.»
+        </p>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECCIÓN: Nuestra Celebración (Merienda Campestre)
+         ========================================== -->
+    <section class="section">
+      <div class="merienda-campestre-card">
+        <div class="merienda-icon">
+          🧉
+        </div>
+        <h2 class="section-title" style="margin-bottom: 8px;">Nuestra Celebración</h2>
+        <div class="divider-gold" style="margin-bottom: 24px;"></div>
+
+        <p class="merienda-text">
+          Nuestra celebración tendrá el encanto de una merienda campestre, con una mesa de cosas ricas y una barra de bebidas para disfrutar juntos de una tarde especial.
+        </p>
+
+        <p class="merienda-text highlight-mate">
+          Y como queremos que sea una tarde bien nuestra, ¡si te gusta el mate, traé tu equipo y compartamos unos mates juntos! 🧉
+        </p>
+
+        <p class="merienda-text" style="font-weight: 600; color: var(--color-sage-dark); margin-bottom: 0;">
+          Preparamos esta tarde con mucho cariño y nos hace muy felices poder compartirla con ustedes. 🤍
+        </p>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECCIÓN: Tarjeta
+         ========================================== -->
+    <section class="section section-alt" id="tarjeta">
+      <div class="section-header">
+        <div class="section-icon">
+          <i class="fas fa-gift"></i>
+        </div>
+        <h2 class="section-title">Tarjeta</h2>
+        <div class="divider-gold"></div>
+      </div>
+
+      <div class="ticket-info-card">
+        <div class="ticket-price-box">
+          <span style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-muted); font-weight: 600;">Valor de la Tarjeta</span>
+          <div class="ticket-amount">$30.000</div>
+          <div class="ticket-currency">por persona</div>
+          <div class="ticket-rule-badge">
+            👶 Los menores de 3 años NO abonan ningún valor (Tarjeta sin cargo)
+          </div>
+        </div>
+
+        <!-- Alias de Transferencia con Copia de 1 Clic -->
+        <div class="alias-box">
+          <div class="alias-details">
+            <span class="alias-label">Alias Bancario</span>
+            <div class="alias-value">bodaflor.max</div>
+          </div>
+          <button type="button" class="btn-copy-alias" onclick="copyAlias('bodaflor.max')">
+            <i class="far fa-copy"></i> Copiar Alias
+          </button>
+        </div>
+
+        <p style="font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 18px;">
+          Podes transferir desde cualquier banco o billetera virtual (Mercado Pago, BNA+, Ualá, etc.).
+        </p>
+
+        <!-- Botón para ir a confirmar y subir comprobante -->
+        <a href="confirmar.html" class="btn btn-primary btn-block">
+          <i class="fas fa-receipt"></i> Registrar Invitados y Confirmar Asistencia
+        </a>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECCIÓN RÁPIDA: Confirmación Express & WhatsApp
+         ========================================== -->
+    <section class="section">
+      <div class="quick-rsvp-card">
+        <i class="far fa-envelope-open" style="font-size: 40px; margin-bottom: 12px; opacity: 0.95;"></i>
+        <h3>¿Venís a festejar?</h3>
+        <p>
+          Por favor confirmanos tu asistencia lo antes posible para organizar los lugares, catering y detalles.
+        </p>
+        <a href="confirmar.html" class="btn btn-primary btn-block" style="background: #FFF; color: var(--color-sage-dark);">
+          <i class="fas fa-arrow-right"></i> Ir al Formulario de Confirmación
+        </a>
+      </div>
+
+      <!-- Ayuda y Contacto directo con los novios -->
+      <div class="financial-aid-card">
+        <div style="font-weight: 700; color: var(--color-sage-dark); font-size: 1rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+          <i class="fab fa-whatsapp" style="font-size: 20px; color: #25D366;"></i> ¿Alguna dificultad para abonar?
+        </div>
+        <p>
+          Si tenés alguna dificultad económica o inconveniente para abonar la tarjeta o realizar la transferencia, no dudes en escribirnos por WhatsApp.
+        </p>
+        <div class="whatsapp-buttons-group">
+          <a href="https://wa.me/5493413404899?text=%C2%A1Hola%20Flor!%20Te%20escribo%20por%20la%20confirmaci%C3%B3n%20de%20asistencia%20y%20el%20pago%20de%20la%20tarjeta%20para%20su%20boda." target="_blank" class="btn-whatsapp-person">
+            <i class="fab fa-whatsapp"></i> WhatsApp Flor
+          </a>
+          <a href="https://wa.me/5493415971696?text=%C2%A1Hola%20Max!%20Te%20escribo%20por%20la%20confirmaci%C3%B3n%20de%20asistencia%20y%20el%20pago%20de%20la%20tarjeta%20para%20su%20boda." target="_blank" class="btn-whatsapp-person">
+            <i class="fab fa-whatsapp"></i> WhatsApp Max
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         FOOTER
+         ========================================== -->
+    <footer class="site-footer">
+      <div class="footer-names">Flor & Max</div>
+      <p class="footer-text">21 de Marzo de 2027 &bull; Rosario, Santa Fe</p>
+      <p style="font-size: 0.72rem; color: #A0A8A3; margin-top: 14px;">
+        Hecho con amor para nuestro casamiento ✨
+      </p>
+    </footer>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

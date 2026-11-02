@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Confirmación de Asistencia | Boda Flor & Max</title>
+  <meta name="description" content="Registro de invitados y confirmación de asistencia para la boda de Flor y Max.">
+  <meta name="theme-color" content="#4B5842">
+
+  <!-- Open Graph / WhatsApp Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Confirmación de Asistencia • Boda Flor & Max">
+  <meta property="og:description" content="Confirmá tu lugar y el de tus acompañantes para nuestro casamiento.">
+  <meta property="og:image" content="assets/images/monograma-flor-y-max.jpg">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+
+  <!-- Google Fonts: Cormorant Garamond, Great Vibes, Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Great+Vibes&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Estilos del Sitio -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+  <!-- Canvas animado de pétalos sutiles -->
+  <canvas id="petals-canvas"></canvas>
+
+  <div class="site-wrapper">
+
+    <!-- Header con navegación de retorno -->
+    <header class="rsvp-header-nav">
+      <a href="index.html" class="back-link">
+        <i class="fas fa-arrow-left"></i> Volver a la invitación
+      </a>
+      <span class="script-font" style="font-size: 1.8rem; color: var(--color-gold);">Flor & Max</span>
+    </header>
+
+    <!-- Contenedor Principal del Formulario -->
+    <main class="section" id="rsvpMainContainer" style="padding-top: 24px;">
+
+      <!-- PANTALLA PRINCIPAL: Formulario de Confirmación -->
+      <div id="rsvpFormContainer">
+        
+        <div class="section-header" style="margin-bottom: 20px;">
+          <h1 class="section-title" style="font-size: 2.2rem;">Confirmar Asistencia</h1>
+          <p class="section-subtitle">
+            Completá tus datos, sumá a tus acompañantes y adjuntá el comprobante de pago de la tarjeta.
+          </p>
+          <div class="divider-gold"></div>
+        </div>
+
+        <!-- Política de Invitados Solicitada -->
+        <div class="policy-card">
+          <div class="policy-card-title">
+            <i class="fas fa-heart" style="color: var(--color-gold);"></i> Información Importante
+          </div>
+          <p class="policy-card-text">
+            La invitación es válida exclusivamente para las personas cuyos nombres han sido incluidos por los novios en la lista de invitados.
+          </p>
+          <p class="policy-card-text">
+            Les pedimos que, por cuestiones de organización y capacidad del lugar, no se agreguen acompañantes ni invitados que no hayan sido previamente confirmados por nosotros.
+          </p>
+          <p class="policy-card-text" style="font-weight: 600; margin-bottom: 0;">
+            ¡Gracias por comprender y ayudarnos a cuidar cada detalle de este día tan especial! 🤍
+          </p>
+        </div>
+
+        <!-- Alerta preventivo para no duplicar pagos de parejas/familias -->
+        <div class="couple-alert-card">
+          <i class="fas fa-users" style="font-size: 22px; color: var(--color-gold-dark); margin-top: 2px;"></i>
+          <div>
+            <strong style="color: var(--color-gold-dark); font-size: 0.95rem;">¿Venís en pareja o en familia?</strong>
+            <p style="margin: 4px 0 0; font-size: 0.82rem; color: var(--color-dark); line-height: 1.45;">
+              Para evitar abonar tarjetas dobles, les pedimos que <strong>una sola persona confirme y abone por ambos</strong>. Si tu pareja o familiar ya confirmó por su cuenta, no lo vuelvas a registrar aquí.
+            </p>
+          </div>
+        </div>
+
+        <form id="rsvpForm" novalidate>
+
+          <!-- PASO 1: Datos del Invitado 1 -->
+          <div class="rsvp-step-card">
+            <h2 class="step-title">
+              <span class="step-number">1</span> Tus Datos (Invitado 1)
+            </h2>
+            <p class="step-desc">
+              Al ingresar tus datos de contacto ya quedás registrado como el primer invitado del evento.
+            </p>
+
+            <div class="form-group">
+              <label class="form-label" for="respName">Nombre y Apellido <span class="required">*</span></label>
+              <input type="text" id="respName" class="form-control" placeholder="Ej: Lucas González (Nombre y Apellido completos)" required autocomplete="name">
+              <div id="titularCheckStatus" class="duplicate-checking-spinner">
+                <i class="fas fa-spinner fa-spin"></i> Verificando lista de confirmados...
+              </div>
+              <div id="duplicateAlertTitular" class="duplicate-warning-box" style="display: none;"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="respPhone">Teléfono / WhatsApp <span class="required">*</span></label>
+              <input type="tel" id="respPhone" class="form-control" placeholder="Ej: 341 123 4567" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="respEmail">Correo Electrónico <small style="color: var(--color-sage-dark); font-weight: 500;">(Opcional - para recibir la confirmación con los datos de la boda)</small></label>
+              <input type="email" id="respEmail" class="form-control" placeholder="Ej: lucas@gmail.com">
+            </div>
+          </div>
+
+          <!-- PASO 2: Acompañantes Adicionales -->
+          <div class="rsvp-step-card">
+            <h2 class="step-title">
+              <span class="step-number">2</span> Acompañantes Adicionales
+            </h2>
+            <p class="step-desc">
+              Si tu pareja, hijos u otros familiares fueron previamente confirmados por los novios, sumalos aquí:
+            </p>
+
+            <!-- Contenedor dinámico donde se agregan los acompañantes -->
+            <div id="companionsListContainer">
+              <!-- Se agregan dinámicamente -->
+            </div>
+
+            <button type="button" id="btnAddCompanion" class="btn btn-secondary btn-block" style="margin-top: 14px;">
+              <i class="fas fa-user-plus"></i> + Agregar acompañante
+            </button>
+          </div>
+
+          <!-- PASO 3: Resumen y Cálculo Automático en Tiempo Real -->
+          <div class="calculation-summary-card">
+            <h3 style="font-size: 1.3rem; margin-bottom: 12px; color: var(--color-dark); text-align: center;">
+              <i class="fas fa-calculator" style="color: var(--color-gold);"></i> Resumen de la Tarjeta
+            </h3>
+
+            <div class="calculation-row">
+              <span>Total de personas registradas:</span>
+              <strong id="calcTotalGuests">1</strong>
+            </div>
+
+            <div class="calculation-row">
+              <span>Adultos (<span id="calcAdultsCount">1</span> × $30.000):</span>
+              <strong id="calcAdultsPrice" style="color: var(--color-gold-dark);">$30.000</strong>
+            </div>
+
+            <div class="calculation-row">
+              <span>Menores de 3 años (<span id="calcChildrenCount">0</span> × $0):</span>
+              <strong style="color: var(--color-sage-dark);">Gratis ($0)</strong>
+            </div>
+
+            <div class="calculation-total-row">
+              <div class="calculation-total-label">TOTAL A ABONAR:</div>
+              <div class="calculation-total-value" id="calcTotalAmount">$30.000</div>
+            </div>
+          </div>
+
+          <!-- PASO 4: Datos de Pago y Alias -->
+          <div class="rsvp-step-card">
+            <h2 class="step-title">
+              <span class="step-number">3</span> Realizar Transferencia
+            </h2>
+            <p class="step-desc">
+              Transferí el monto total indicado arriba a través del siguiente alias bancario:
+            </p>
+
+            <div class="bank-transfer-box">
+              <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-muted); font-weight: 700; margin-bottom: 4px;">
+                Alias Bancario
+              </div>
+              <div style="font-family: 'Courier New', monospace; font-size: 1.4rem; font-weight: 700; color: var(--color-gold-dark); margin-bottom: 10px;">
+                bodaflor.max
+              </div>
+
+              <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline-gold btn-sm" onclick="copyAlias('bodaflor.max')">
+                  <i class="far fa-copy"></i> Copiar Alias
+                </button>
+              </div>
+            </div>
+
+            <!-- Ayuda en caso de dificultades económicas / WhatsApp de Flor y Max -->
+            <div class="financial-aid-card">
+              <div style="font-weight: 700; color: var(--color-sage-dark); font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                <i class="fab fa-whatsapp" style="font-size: 20px; color: #25D366;"></i> ¿Alguna dificultad para abonar?
+              </div>
+              <p style="margin-bottom: 14px;">
+                Si tenés alguna dificultad económica o inconveniente para abonar la tarjeta o realizar la transferencia, no dudes en escribirnos por WhatsApp.
+              </p>
+              <div class="whatsapp-buttons-group">
+                <a href="https://wa.me/5493413404899?text=%C2%A1Hola%20Flor!%20Te%20escribo%20por%20la%20confirmaci%C3%B3n%20de%20asistencia%20y%20el%20pago%20de%20la%20tarjeta%20para%20su%20boda." target="_blank" class="btn-whatsapp-person">
+                  <i class="fab fa-whatsapp"></i> WhatsApp Flor (341 340-4899)
+                </a>
+                <a href="https://wa.me/5493415971696?text=%C2%A1Hola%20Max!%20Te%20escribo%20por%20la%20confirmaci%C3%B3n%20de%20asistencia%20y%20el%20pago%20de%20la%20tarjeta%20para%20su%20boda." target="_blank" class="btn-whatsapp-person">
+                  <i class="fab fa-whatsapp"></i> WhatsApp Max (341 597-1696)
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 5: Adjuntar Comprobante de Pago -->
+          <div class="rsvp-step-card">
+            <h2 class="step-title">
+              <span class="step-number">4</span> Enviar Comprobante de Pago
+            </h2>
+            <p class="step-desc">
+              Una vez realizada la transferencia, adjuntá aquí la captura o foto del comprobante para confirmar tu asistencia:
+              <br><small id="receiptRequiredNotice" style="color: #9E2A2B; font-weight: 600;">* Obligatorio para confirmar la reserva</small>
+            </p>
+
+            <div class="upload-dropzone" id="uploadDropzone">
+              <input type="file" id="receiptFileInput" accept="image/jpeg,image/png,image/webp">
+              
+              <div id="uploadPromptContainer">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <div class="upload-prompt">Elegí la foto del comprobante o arrastrala acá</div>
+                <div class="upload-subprompt">Formatos admitidos: JPG, PNG, WEBP (Captura de pantalla)</div>
+              </div>
+
+              <!-- Vista previa de la imagen cargada -->
+              <div class="receipt-preview-container" id="receiptPreviewContainer">
+                <img id="receiptPreviewImg" class="receipt-preview-img" src="" alt="Comprobante">
+                <button type="button" class="btn-remove-receipt" onclick="removeReceipt()" title="Eliminar foto">
+                  <i class="fas fa-times"></i>
+                </button>
+                <div id="receiptFileName" style="font-size: 0.75rem; color: #FFF; background: rgba(0,0,0,0.7); padding: 4px 8px; text-align: left;"></div>
+              </div>
+            </div>
+
+            <!-- Deseo o nota para los novios -->
+            <div class="form-group" style="margin-top: 18px;">
+              <label class="form-label" for="wishesNotes">Dedicatoria o mensaje para los novios (Opcional)</label>
+              <textarea id="wishesNotes" class="form-control" placeholder="Dejales un mensaje de bendición y cariño a Flor y Max..."></textarea>
+            </div>
+          </div>
+
+          <!-- PASO 5: Selección Obligatoria de Destinatario de WhatsApp -->
+          <div class="rsvp-step-card" style="border: 2px solid #25D366; background: #F8FDF9;">
+            <h2 class="step-title" style="color: #1E7E34; font-size: 1.25rem;">
+              <span class="step-number" style="background: #25D366;">5</span> Enviar Confirmación por WhatsApp
+            </h2>
+            <p class="step-desc" style="margin-bottom: 12px; color: #2E5A36;">
+              Al confirmar se abrirá <strong>automáticamente tu WhatsApp</strong> con el mensaje listo para enviar a:
+            </p>
+
+            <div class="recipient-selection-group">
+              <label class="recipient-radio-card active" id="labelRecipientFlor">
+                <input type="radio" name="whatsappRecipient" value="flor" checked onchange="updateRecipientStyle()">
+                <div class="recipient-info">
+                  <i class="fab fa-whatsapp" style="color: #25D366; font-size: 24px;"></i>
+                  <div>
+                    <strong style="display: block; font-size: 0.95rem;">Flor</strong>
+                    <span style="font-size: 0.75rem; color: #666;">341 340-4899</span>
+                  </div>
+                </div>
+              </label>
+
+              <label class="recipient-radio-card" id="labelRecipientMax">
+                <input type="radio" name="whatsappRecipient" value="max" onchange="updateRecipientStyle()">
+                <div class="recipient-info">
+                  <i class="fab fa-whatsapp" style="color: #25D366; font-size: 24px;"></i>
+                  <div>
+                    <strong style="display: block; font-size: 0.95rem;">Max</strong>
+                    <span style="font-size: 0.75rem; color: #666;">341 597-1696</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- BOTÓN FINAL DE CONFIRMACIÓN -->
+          <div style="margin-bottom: 40px;">
+            <div id="finalPricePrompt" style="text-align: center; font-size: 0.95rem; font-weight: 700; color: var(--color-dark); margin-bottom: 12px;">
+              Total a transferir: $30.000 ARS
+            </div>
+            
+            <button type="submit" id="btnSubmitRsvp" class="btn btn-block" style="background: #25D366; color: #FFF; padding: 18px 24px; font-size: 1.15rem; font-weight: 700; box-shadow: 0 10px 25px rgba(37, 211, 102, 0.4); border: none;">
+              <i class="fab fa-whatsapp" style="font-size: 24px;"></i> Confirmar y Enviar a WhatsApp
+            </button>
+            <p style="text-align: center; font-size: 0.75rem; color: var(--color-text-muted); margin-top: 8px;">
+              Los datos se guardan en la planilla y se envía el mensaje directo a los novios.
+            </p>
+          </div>
+
+        </form>
+
+      </div>
+
+      <!-- PANTALLA DE ÉXITO (Se muestra automáticamente al finalizar) -->
+      <div id="rsvpSuccessContainer" class="success-screen">
+        <div class="success-check-icon">
+          <i class="fas fa-heart"></i>
+        </div>
+
+        <h2 style="font-size: 2.2rem; color: var(--color-dark); margin-bottom: 8px;">
+          ¡Asistencia Registrada!
+        </h2>
+        
+        <!-- Notificación de Redireccionamiento / Envío por WhatsApp -->
+        <div class="whatsapp-auto-notice">
+          <i class="fab fa-whatsapp" style="font-size: 32px; color: #25D366; margin-bottom: 6px;"></i>
+          <strong>Abriendo WhatsApp automáticamente...</strong>
+          <span style="font-size: 0.85rem; display: block; margin-top: 4px;">
+            Si la aplicación no se abrió sola, tocá el botón verde abajo para enviar tu mensaje de confirmación:
+          </span>
+        </div>
+
+        <!-- Botón Gigante Principal de WhatsApp -->
+        <a id="btnWhatsAppDirectAction" href="#" target="_blank" class="btn btn-block" style="background: #25D366; color: #FFF; padding: 18px 20px; font-size: 1.15rem; font-weight: 700; box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4); margin-bottom: 24px; text-decoration: none;">
+          <i class="fab fa-whatsapp" style="font-size: 24px;"></i> Enviar Mensaje a <span id="recipientNameDisplay">los Novios</span>
+        </a>
+
+        <!-- Tarjeta Resumen de Confirmación -->
+        <div style="background: #FFF; border: 1px solid var(--color-gold-light); border-radius: var(--radius-lg); padding: 24px 20px; text-align: left; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border); padding-bottom: 10px; margin-bottom: 12px;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-gold-dark);">RESUMEN DE REGISTRO</span>
+            <span style="font-size: 0.75rem; background: var(--color-sage-light); color: var(--color-sage-dark); padding: 4px 10px; border-radius: var(--radius-full); font-weight: 600;">Confirmado</span>
+          </div>
+
+          <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 8px;">Invitados confirmados:</p>
+          <ul id="successGuestsList" style="list-style: none; padding-left: 0; font-size: 0.9rem; margin-bottom: 14px;">
+            <!-- Inyectado por JS -->
+          </ul>
+
+          <div style="border-top: 1px dashed var(--color-border); padding-top: 10px; display: flex; justify-content: space-between; align-items: baseline;">
+            <span style="font-size: 0.9rem; font-weight: 600;">Total Tarjeta:</span>
+            <span id="successTotalAmount" style="font-size: 1.3rem; font-weight: 700; color: var(--color-gold-dark);">$30.000</span>
+          </div>
+        </div>
+
+        <!-- Botones de Respaldo por WhatsApp (Flor o Max) -->
+        <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 10px;">
+          Podés enviar una copia de confirmación directamente a los novios:
+        </p>
+        <div class="whatsapp-buttons-group" style="margin-bottom: 16px;">
+          <a id="btnWhatsAppSuccessFlor" href="#" target="_blank" class="btn-whatsapp-person">
+            <i class="fab fa-whatsapp"></i> Avisar a Flor
+          </a>
+          <a id="btnWhatsAppSuccessMax" href="#" target="_blank" class="btn-whatsapp-person">
+            <i class="fab fa-whatsapp"></i> Avisar a Max
+          </a>
+        </div>
+
+        <a href="index.html" class="btn btn-secondary btn-block">
+          <i class="fas fa-home"></i> Volver a la portada de la invitación
+        </a>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-names">Flor & Max</div>
+      <p class="footer-text">21 de Marzo de 2027 &bull; Rosario, Santa Fe</p>
+    </footer>
+
+  </div>
+
+  <!-- Notificación Toast -->
+  <div id="toastNotice" class="toast-notice"></div>
+
+  <!-- Scripts -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/rsvp.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
