@@ -256,11 +256,15 @@ function updateCalculations() {
   const receiptRequiredNotice = document.getElementById('receiptRequiredNotice');
   if (receiptRequiredNotice) {
     if (totalAmount === 0 && totalGuests > 0) {
-      receiptRequiredNotice.innerText = "(Tarjeta sin cargo para todos los invitados menores de 3 años)";
+      receiptRequiredNotice.innerHTML = '<i class="fas fa-check-circle" style="color: #5A7163;"></i> (Tarjeta sin cargo para todos los invitados menores de 3 años)';
       receiptRequiredNotice.style.color = "#5A7163";
+      receiptRequiredNotice.style.background = "#EBF3EE";
+      receiptRequiredNotice.style.borderColor = "#C4DEC9";
     } else {
-      receiptRequiredNotice.innerText = "* Obligatorio para confirmar la reserva";
+      receiptRequiredNotice.innerHTML = '<i class="fas fa-exclamation-circle" style="color: #9E2A2B;"></i> Adjuntar el comprobante es obligatorio para confirmar';
       receiptRequiredNotice.style.color = "#9E2A2B";
+      receiptRequiredNotice.style.background = "#FFF0F0";
+      receiptRequiredNotice.style.borderColor = "#FFCDD2";
     }
   }
 
@@ -417,17 +421,16 @@ async function handleFormSubmit(e) {
     }
   }
 
-  // Si el monto es mayor a 0 y no subió comprobante, confirmar
+  // Validación estricta y obligatoria del comprobante de transferencia
   if (calc.totalAmount > 0 && !receiptBase64) {
-    const confirmWithoutReceipt = confirm(
-      "Aún no has adjuntado el comprobante de la transferencia.\n\n" +
-      "¿Deseas confirmar y enviar el comprobante directamente por WhatsApp a Flor o Max?"
-    );
-    if (!confirmWithoutReceipt) {
-      const dropzone = document.getElementById('uploadDropzone');
-      if (dropzone) dropzone.scrollIntoView({ behavior: 'smooth' });
-      return;
+    alert("⚠️ Es obligatorio adjuntar el comprobante de la transferencia para confirmar la asistencia.\n\nPor favor seleccioná o arrastrá la captura de tu comprobante.");
+    const dropzone = document.getElementById('uploadDropzone');
+    if (dropzone) {
+      dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      dropzone.classList.add('highlight-required');
+      setTimeout(() => dropzone.classList.remove('highlight-required'), 3000);
     }
+    return;
   }
 
   // Destinatario de WhatsApp seleccionado (Flor o Max)

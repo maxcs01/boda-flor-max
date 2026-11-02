@@ -1245,6 +1245,19 @@ textarea.form-control {
   border-color: var(--color-gold-dark);
 }
 
+.upload-dropzone.highlight-required {
+  border-color: #D90429 !important;
+  background-color: #FFF0F0 !important;
+  box-shadow: 0 0 18px rgba(217, 4, 41, 0.35);
+  animation: shakeDropzone 0.4s ease-in-out;
+}
+
+@keyframes shakeDropzone {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
 .upload-dropzone input[type="file"] {
   position: absolute;
   top: 0;
