@@ -38,10 +38,10 @@
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
 
-  <!-- Google Fonts: Antic Didone (Estilo Fresco), Cormorant Garamond, Great Vibes, Montserrat -->
+  <!-- Google Fonts: Cormorant Garamond, Great Vibes, Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Antic+Didone&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Great+Vibes&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Great+Vibes&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -51,192 +51,11 @@
 </head>
 <body>
 
-  <!-- ========================================================
-       EXPERIENCIA SCROLL-DRIVEN: SOBRE INTERACTIVO CON LAZO (THE DIGITAL YES - FRESCO)
-       Apertura controlada a medida que se desliza la pantalla hacia abajo
-       ======================================================== -->
-  <section class="envelope-scroll-experience" id="envelopeScrollSection">
-    <div class="envelope-sticky-viewport" id="envelopeStickyViewport">
-      
-      <!-- Fondo decorativo sutil -->
-      <div class="envelope-backdrop"></div>
-
-      <!-- Contenedor 3D del Sobre -->
-      <div class="scroll-envelope-wrapper" id="scrollEnvelopeWrapper">
-        
-        <!-- Base / Fondo interior del sobre -->
-        <div class="scroll-envelope-back">
-          <div class="envelope-inner-lining">
-            <span class="lining-monogram">F &bull; M</span>
-          </div>
-        </div>
-
-        <!-- Carta interna de invitación que se eleva suavemente con el scroll -->
-        <div class="scroll-envelope-card" id="scrollEnvelopeCard">
-          <div class="card-inner-border">
-            <div class="card-top-detail">
-              <img src="assets/images/monograma-flor-y-max.jpg" alt="Flor & Max" class="card-monogram">
-              <span class="card-tagline">Nuestra Boda</span>
-            </div>
-            <h2 class="card-names">Flor & Max</h2>
-            <img src="assets/fresco/floral-divider-DJovYoL0.png" alt="Detalle floral" class="card-divider">
-            <div class="card-date-badge">21 · MARZO · 2027</div>
-            <div class="card-photo-arch">
-              <img src="assets/images/foto-pareja.jpg" alt="Flor y Max Casamiento">
-            </div>
-            <p class="card-venue">Club de Campo María Antonia &bull; Rosario</p>
-          </div>
-        </div>
-
-        <!-- Solapa triangular superior plegable en 3D (rotateX) -->
-        <div class="scroll-envelope-flap" id="scrollEnvelopeFlap">
-          <!-- Cara frontal (visible cuando el sobre está cerrado) -->
-          <div class="flap-face flap-front">
-            <svg viewBox="0 0 420 135" preserveAspectRatio="none" class="flap-svg">
-              <defs>
-                <linearGradient id="flapFrontGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#EBE6DE"/>
-                  <stop offset="100%" stop-color="#DDD6CA"/>
-                </linearGradient>
-                <filter id="flapShadow" x="-10%" y="0%" width="120%" height="130%">
-                  <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#232A21" flood-opacity="0.18"/>
-                </filter>
-              </defs>
-              <polygon points="0,0 420,0 210,135" fill="url(#flapFrontGrad)" filter="url(#flapShadow)"/>
-              <polyline points="0,0 210,135 420,0" fill="none" stroke="rgba(197, 160, 89, 0.45)" stroke-width="2"/>
-            </svg>
-          </div>
-          <!-- Cara posterior (visible cuando la solapa se levanta en 3D hacia arriba) -->
-          <div class="flap-face flap-back">
-            <svg viewBox="0 0 420 135" preserveAspectRatio="none" class="flap-svg">
-              <defs>
-                <linearGradient id="flapBackGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#FBF8F2"/>
-                  <stop offset="100%" stop-color="#EDE7DC"/>
-                </linearGradient>
-              </defs>
-              <polygon points="0,0 420,0 210,135" fill="url(#flapBackGrad)"/>
-              <polyline points="0,0 210,135 420,0" fill="none" stroke="rgba(197, 160, 89, 0.35)" stroke-width="1.5"/>
-            </svg>
-            <div class="flap-back-seal">
-              <div class="seal-inner-circle">F&bull;M</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bolsillo frontal del sobre que resguarda la carta -->
-        <div class="scroll-envelope-pocket">
-          <svg viewBox="0 0 420 260" preserveAspectRatio="none" class="pocket-svg">
-            <defs>
-              <linearGradient id="pocketLeftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#E8E2D7"/>
-                <stop offset="100%" stop-color="#DAD3C5"/>
-              </linearGradient>
-              <linearGradient id="pocketRightGrad" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#E8E2D7"/>
-                <stop offset="100%" stop-color="#DAD3C5"/>
-              </linearGradient>
-              <linearGradient id="pocketBottomGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                <stop offset="0%" stop-color="#DFD8CB"/>
-                <stop offset="100%" stop-color="#CFC7B7"/>
-              </linearGradient>
-              <filter id="pocketShadow" x="-10%" y="-10%" width="120%" height="120%">
-                <feDropShadow dx="0" dy="-3" stdDeviation="4" flood-color="#232A21" flood-opacity="0.14"/>
-              </filter>
-            </defs>
-            <!-- Pliegues laterales -->
-            <polygon points="0,0 210,130 0,260" fill="url(#pocketLeftGrad)"/>
-            <polygon points="420,0 210,130 420,260" fill="url(#pocketRightGrad)"/>
-            <!-- Pliegue inferior sobrepuesto con sombra y bordes dorados -->
-            <polygon points="0,260 210,120 420,260" fill="url(#pocketBottomGrad)" filter="url(#pocketShadow)"/>
-            <polyline points="0,260 210,120 420,260" fill="none" stroke="rgba(197, 160, 89, 0.4)" stroke-width="1.5"/>
-          </svg>
-        </div>
-
-        <!-- Cintas de Seda Verde Oliva con Ribetes Dorados -->
-        <div class="scroll-ribbon-horizontal-left" id="ribbonHLeft"></div>
-        <div class="scroll-ribbon-horizontal-right" id="ribbonHRight"></div>
-        <div class="scroll-ribbon-vertical-top" id="ribbonVTop"></div>
-        <div class="scroll-ribbon-vertical-bottom" id="ribbonVBottom"></div>
-
-        <!-- Lazo Central de Seda que se Desata al Hacer Scroll -->
-        <div class="scroll-bow-container" id="scrollBowContainer">
-          <!-- Bucle Izquierdo del Lazo -->
-          <div class="bow-loop bow-loop-left" id="bowLoopLeft">
-            <svg viewBox="0 0 70 50" class="bow-svg">
-              <defs>
-                <linearGradient id="silkGradLeft" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#64765C"/>
-                  <stop offset="45%" stop-color="#4B5842"/>
-                  <stop offset="100%" stop-color="#353E2F"/>
-                </linearGradient>
-              </defs>
-              <path d="M68,25 C50,5 15,2 3,18 C-4,28 8,46 32,44 C52,42 66,32 68,25 Z" fill="url(#silkGradLeft)" filter="drop-shadow(0 3px 6px rgba(0,0,0,0.35))"/>
-              <path d="M65,25 C45,12 25,12 12,22 C5,27 12,38 28,37 C46,35 60,28 65,25 Z" fill="#3D4836" opacity="0.45"/>
-            </svg>
-          </div>
-
-          <!-- Bucle Derecho del Lazo -->
-          <div class="bow-loop bow-loop-right" id="bowLoopRight">
-            <svg viewBox="0 0 70 50" class="bow-svg">
-              <defs>
-                <linearGradient id="silkGradRight" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#64765C"/>
-                  <stop offset="45%" stop-color="#4B5842"/>
-                  <stop offset="100%" stop-color="#353E2F"/>
-                </linearGradient>
-              </defs>
-              <path d="M2,25 C20,5 55,2 67,18 C74,28 62,46 38,44 C18,42 4,32 2,25 Z" fill="url(#silkGradRight)" filter="drop-shadow(0 3px 6px rgba(0,0,0,0.35))"/>
-              <path d="M5,25 C25,12 45,12 58,22 C65,27 58,38 42,37 C24,35 10,28 5,25 Z" fill="#3D4836" opacity="0.45"/>
-            </svg>
-          </div>
-
-          <!-- Tiras / Colas del Lazo -->
-          <div class="bow-tail bow-tail-left" id="bowTailLeft">
-            <svg viewBox="0 0 50 80" class="tail-svg">
-              <path d="M35,2 C35,2 30,30 20,50 C12,65 2,78 2,78 L20,74 L32,80 C26,62 38,35 44,2 Z" fill="#4B5842" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.3))"/>
-            </svg>
-          </div>
-
-          <div class="bow-tail bow-tail-right" id="bowTailRight">
-            <svg viewBox="0 0 50 80" class="tail-svg">
-              <path d="M15,2 C15,2 20,30 30,50 C38,65 48,78 48,78 L30,74 L18,80 C24,62 12,35 6,2 Z" fill="#3F4B38" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.3))"/>
-            </svg>
-          </div>
-
-          <!-- Nudo Central con Mini Medallón Dorado -->
-          <div class="bow-knot" id="bowKnot">
-            <div class="knot-fabric"></div>
-            <div class="gold-seal-mini">
-              <span>F&M</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Indicador Guía de Scroll / Deslizar -->
-      <div class="scroll-guide-indicator" id="scrollGuideIndicator" onclick="autoOpenEnvelope()">
-        <div class="guide-pill">
-          <i class="fas fa-chevron-down guide-chevron-animated"></i>
-          <span>Deslizá hacia abajo para abrir</span>
-        </div>
-        <span class="guide-subtext">o tocá aquí</span>
-      </div>
-
-    </div>
-  </section>
-
   <!-- Canvas animado de pétalos sutiles -->
   <canvas id="petals-canvas"></canvas>
 
-  <!-- Botón Flotante para Reabrir el Sobre -->
-  <button type="button" class="btn-reopen-envelope" id="btnReopenEnvelope" onclick="reopenEnvelope()" title="Ver sobre">
-    <i class="fas fa-envelope-open-text"></i> Ver sobre
-  </button>
-
   <!-- Botón Flotante de Confirmación Rápida -->
-  <div class="floating-rsvp-btn" id="floatingRsvpBtn">
+  <div class="floating-rsvp-btn">
     <a href="confirmar.html" class="btn btn-primary btn-block">
       <i class="fas fa-calendar-check"></i> Confirmar Asistencia
     </a>
@@ -245,43 +64,26 @@
   <div class="site-wrapper">
 
     <!-- ==========================================
-         HERO SECTION: Portada de la Invitación (Estilo Editorial Fresco)
+         HERO SECTION: Portada de la Invitación
          ========================================== -->
-    <header class="hero-section" style="padding-top: 24px;">
-      
-      <div class="fresco-hero-container">
-        
-        <!-- Monograma Floral Botánico de los Novios -->
-        <img src="assets/images/monograma-flor-y-max.jpg" alt="Flor & Max 21/03/2027" class="fresco-monogram-top">
+    <header class="hero-section">
+      <div class="hero-top" style="margin-bottom: 20px;">
+        <!-- Monograma floral refinado en tamaño principal -->
+        <img src="assets/images/monograma-flor-y-max.jpg" alt="Flor & Max 21/03/2027" class="hero-monogram-img">
 
-        <!-- Nombres en Tipografía Editorial Antic Didone -->
-        <h1 class="fresco-title-names">Flor & Max</h1>
+        <p class="hero-subtitle">¡Nos Casamos!</p>
+        <h1 class="hero-title">
+          Flor <span>&</span> Max
+        </h1>
 
-        <!-- Divisor Botánico Oficial en Acuarela -->
-        <img src="assets/fresco/floral-divider-DJovYoL0.png" alt="Detalle floral" class="fresco-floral-divider">
-
-        <!-- Frase Formal Clásica de Boda -->
-        <p class="fresco-intro-verse">
-          «Junto a nuestras familias, tenemos la inmensa alegría de invitarte a celebrar nuestro casamiento»
-        </p>
-
-        <!-- Píldora de Fecha y Hora -->
-        <div class="hero-date-pill" style="margin-bottom: 20px;">
-          <i class="far fa-calendar-alt"></i> Domingo, 21 de Marzo de 2027 &bull; 15:00 hs puntual
+        <div class="hero-date-pill">
+          <i class="far fa-calendar-alt"></i> 21 de Marzo de 2027 &bull; 15:00 hs
         </div>
+      </div>
 
-        <!-- Marco en Arco Románico de la Foto Real de los Novios -->
-        <div class="fresco-couple-photo-wrapper">
-          <img src="assets/images/foto-pareja.jpg" alt="Flor y Max Casamiento" loading="lazy">
-        </div>
-
-        <!-- Lugar y Ciudad -->
-        <p class="fresco-venue-text">
-          Club de Campo María Antonia
-        </p>
-        <p class="fresco-venue-city">
-          Rosario, Santa Fe
-        </p>
+      <!-- Marco de Foto de Portada con la foto real de los novios -->
+      <div class="hero-image-frame">
+        <img src="assets/images/foto-pareja.jpg" alt="Flor y Max Casamiento" loading="lazy">
       </div>
 
       <!-- Contador Regresivo -->
