@@ -155,7 +155,8 @@ function addCompanionRow() {
         const res = await fetch(`${scriptUrl}?action=checkName&name=${encodeURIComponent(val)}`);
         const data = await res.json();
         if (data && data.duplicate) {
-          compWarning.innerHTML = `⚠️ <strong>«${data.matchedName}»</strong> ya figura confirmado previamente. Su lugar ya está reservado y su tarjeta no debe volver a abonarse.`;
+          const safeMatched = window.PassUtils ? window.PassUtils.escapeHtml(data.matchedName) : data.matchedName;
+          compWarning.innerHTML = `⚠️ <strong>«${safeMatched}»</strong> ya figura confirmado previamente. Su lugar ya está reservado y su tarjeta no debe volver a abonarse.`;
           compWarning.style.display = 'block';
         } else {
           compWarning.style.display = 'none';
@@ -464,16 +465,50 @@ async function handleFormSubmit(e) {
 
   try {
     const scriptUrl = window.WEDDING_CONFIG ? window.WEDDING_CONFIG.googleAppsScriptUrl : "";
+    let serverResult = null;
 
     if (scriptUrl && scriptUrl.startsWith('http')) {
-      await fetch(scriptUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      try {
+        // Enviamos como text/plain para evitar preflight CORS OPTIONS en Google Apps Script
+        // y poder leer directamente la respuesta JSON con passId y emailSent.
+        const response = await fetch(scriptUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          serverResult = await response.json();
+        }
+      } catch (corsErr) {
+        console.warn("Reintentando envío en modo compatibilidad:", corsErr);
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+    }
+
+    if (serverResult && serverResult.status === 'duplicate') {
+      alert("⚠️ " + (serverResult.message || "Uno de los invitados ya figura confirmado previamente."));
+      return;
+    }
+
+    if (serverResult && serverResult.status === 'error') {
+      alert("No se pudo registrar la confirmación: " + (serverResult.message || "Error del servidor."));
+      return;
+    }
+
+    if (serverResult && serverResult.status === 'success') {
+      payload.passId = serverResult.passId || null;
+      payload.passUrl = serverResult.passUrl || (payload.passId && window.PassUtils ? window.PassUtils.buildPassUrl(payload.passId) : null);
+      payload.emailSent = Boolean(serverResult.emailSent);
+      payload.emailError = serverResult.emailError || '';
     }
 
     // Guardar copia local de respaldo
@@ -485,6 +520,7 @@ async function handleFormSubmit(e) {
 
   } catch (error) {
     console.warn("Aviso al enviar a Sheets:", error);
+    payload.networkWarning = true;
     showSuccessScreen(payload);
   } finally {
     isSubmitting = false;
@@ -494,11 +530,12 @@ async function handleFormSubmit(e) {
 }
 
 /**
- * Pantalla de confirmación con enlaces a Flor y Max
+ * Pantalla de confirmación con Pase QR, estado del e-mail y enlaces a Flor y Max
  */
 function showSuccessScreen(data) {
   const formCard = document.getElementById('rsvpFormContainer');
   const successCard = document.getElementById('rsvpSuccessContainer');
+  const escape = window.PassUtils ? window.PassUtils.escapeHtml : (s) => s;
 
   if (formCard) formCard.style.display = 'none';
   if (successCard) successCard.style.display = 'block';
@@ -509,7 +546,7 @@ function showSuccessScreen(data) {
   if (summaryGuestsList) {
     summaryGuestsList.innerHTML = data.guests.map((g, i) => `
       <li style="margin-bottom: 6px;">
-        <strong>${i + 1}. ${g.name}</strong> 
+        <strong>${i + 1}. ${escape(g.name)}</strong> 
         ${g.isChild ? '<span style="color: #5A7163; font-size: 0.82rem;">(Menor de 3 años - Sin cargo)</span>' : '<span style="color: #9F7932; font-size: 0.82rem;">($30.000)</span>'}
       </li>
     `).join('');
@@ -517,6 +554,60 @@ function showSuccessScreen(data) {
 
   const successTotalEl = document.getElementById('successTotalAmount');
   if (successTotalEl) successTotalEl.innerText = data.totalAmountFormatted;
+
+  // Renderizar Tarjeta de Pase Digital con Código QR
+  const qrCard = document.getElementById('successQrCard');
+  const qrCanvas = document.getElementById('successQrCanvas');
+  const passBadge = document.getElementById('successPassIdBadge');
+  const btnDownloadPng = document.getElementById('btnDownloadPassPng');
+  const btnOpenPassLink = document.getElementById('btnOpenPassLink');
+
+  let finalPassUrl = data.passUrl || '';
+  if (data.passId && window.PassUtils) {
+    finalPassUrl = finalPassUrl || window.PassUtils.buildPassUrl(data.passId);
+    if (qrCard) qrCard.style.display = 'block';
+    if (passBadge) passBadge.innerText = data.passId;
+    if (qrCanvas) {
+      window.PassUtils.renderQrToCanvas(qrCanvas, finalPassUrl, 210);
+    }
+    if (btnOpenPassLink) {
+      btnOpenPassLink.href = finalPassUrl;
+    }
+    if (btnDownloadPng) {
+      const passObjForPng = {
+        id: data.passId,
+        passUrl: finalPassUrl,
+        titularName: data.responsibleName,
+        companions: data.guests.slice(1),
+        totalGuests: data.totalGuestsCount
+      };
+      btnDownloadPng.onclick = () => window.PassUtils.downloadPassCardPng(passObjForPng);
+    }
+  } else if (qrCard) {
+    qrCard.style.display = 'none';
+  }
+
+  // Banner informativo del disparo de e-mail
+  const emailBanner = document.getElementById('emailStatusBanner');
+  if (emailBanner) {
+    if (data.networkWarning) {
+      emailBanner.className = 'email-status-banner email-status-warn';
+      emailBanner.innerHTML = `<i class="fas fa-wifi"></i> <span>No pudimos confirmar la conexión con la planilla en este momento. Por favor enviá el mensaje de WhatsApp arriba para que Flor o Max verifiquen tu registro.</span>`;
+      emailBanner.style.display = 'flex';
+    } else if (data.email && data.emailSent === true) {
+      emailBanner.className = 'email-status-banner email-status-ok';
+      emailBanner.innerHTML = `<i class="fas fa-envelope-open-text"></i> <span>También enviamos tu confirmación y Pase QR a <strong>${escape(data.email)}</strong> (revisá Spam o Promociones si no aparece en Recibidos).</span>`;
+      emailBanner.style.display = 'flex';
+    } else if (data.email && data.passId) {
+      emailBanner.className = 'email-status-banner email-status-warn';
+      emailBanner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span>Tu asistencia quedó guardada, pero el envío automático por mail no pudo completarse ahora. <strong>Guardá la imagen de tu Pase QR arriba</strong> o usá el link de WhatsApp.</span>`;
+      emailBanner.style.display = 'flex';
+    } else {
+      emailBanner.className = 'email-status-banner email-status-info';
+      emailBanner.innerHTML = `<i class="fas fa-qrcode"></i> <span><strong>Tip:</strong> Tocá "Guardar Pase QR" arriba o conservá el link del mensaje de WhatsApp para mostrarlo al llegar a la fiesta.</span>`;
+      emailBanner.style.display = 'flex';
+    }
+  }
 
   let msg = `¡Hola Flor y Max! Acabamos de confirmar nuestra asistencia a su casamiento ✨👰🤵\n\n`;
   msg += `👤 *Nombre:* ${data.responsibleName}\n`;
@@ -527,6 +618,9 @@ function showSuccessScreen(data) {
     msg += `  ${idx + 1}. ${g.name} ${g.isChild ? '(Menor de 3 años)' : ''}\n`;
   });
   msg += `💰 *Total tarjeta:* ${data.totalAmountFormatted} (Alias: bodaflor.max)\n`;
+  if (data.passId && finalPassUrl) {
+    msg += `🎫 *Pase QR (${data.passId}):* ${finalPassUrl}\n`;
+  }
   if (data.notes) {
     msg += `💌 *Mensaje:* "${data.notes}"\n`;
   }
@@ -559,14 +653,13 @@ function showSuccessScreen(data) {
   }
 
   // APERTURA AUTOMÁTICA DEL WHATSAPP:
-  // Redirige directamente al chat para enviar el mensaje con un solo toque
   setTimeout(() => {
     try {
       window.location.href = directWhatsAppUrl;
     } catch (e) {
       console.warn("Redirección automática a WhatsApp prevenida:", e);
     }
-  }, 400);
+  }, 900);
 }
 
 /**
@@ -612,8 +705,9 @@ async function checkTitularDuplicateLive(fullName) {
     if (data && data.duplicate) {
       titularIsDuplicate = true;
       if (alertBox) {
+        const safeMatched = window.PassUtils ? window.PassUtils.escapeHtml(data.matchedName) : data.matchedName;
         alertBox.innerHTML = `
-          <strong>⚠️ «${data.matchedName}» ya figura confirmado:</strong>
+          <strong>⚠️ «${safeMatched}» ya figura confirmado:</strong>
           <span>Su lugar ya está reservado y su tarjeta no debe volver a abonarse.</span>
           <div style="margin-top: 8px;">
             <a href="https://wa.me/5493413404899?text=${encodeURIComponent('¡Hola Flor! Te escribo porque al poner mi nombre (' + data.matchedName + ') en la invitación me figura que ya fue confirmado...')}" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">

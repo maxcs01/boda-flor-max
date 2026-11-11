@@ -59,9 +59,10 @@ const WEDDING_CONFIG = {
   
   financialAidMessage: "Si tenés alguna dificultad económica o inconveniente para abonar la tarjeta o realizar la transferencia, no dudes en escribirnos por WhatsApp.",
   
-  // Google Sheets Integration
+  // Google Sheets Integration & Pase Digital
   spreadsheetUrl: "https://docs.google.com/spreadsheets/d/15U2O1gAzXvVkAWobayX6wO_MYeyNyJu3WC-Elx4Xn4U/edit?gid=0#gid=0",
-  googleAppsScriptUrl: "https://script.google.com/macros/s/AKfycbwRP_zryXmQp94oXQrMG18mhSKceOX8lW_95jZhh9MTSjyXH9v1875t7RGWzvVfmaKc/exec"
+  googleAppsScriptUrl: "https://script.google.com/macros/s/AKfycbwRP_zryXmQp94oXQrMG18mhSKceOX8lW_95jZhh9MTSjyXH9v1875t7RGWzvVfmaKc/exec",
+  basePassUrl: "https://bodaflor-max.netlify.app/pase.html"
 };
 
 // Exportar globalmente

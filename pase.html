@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pase de Ingreso | Boda Flor & Max</title>
+  <meta name="description" content="Pase QR oficial de ingreso para la boda de Flor & Max - 21 de Marzo de 2027.">
+  <meta name="theme-color" content="#4B5842">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Pase Oficial • Boda Flor & Max">
+  <meta property="og:description" content="Presentá este pase QR al llegar al Club de Campo María Antonia el 21 de Marzo de 2027.">
+  <meta property="og:image" content="https://bodaflor-max.netlify.app/assets/images/monograma-flor-y-max.jpg">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Great+Vibes&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+  <canvas id="petals-canvas"></canvas>
+
+  <div class="site-wrapper">
+    <header class="rsvp-header-nav">
+      <a href="index.html" class="back-link">
+        <i class="fas fa-arrow-left"></i> Ver invitación
+      </a>
+      <span class="script-font" style="font-size: 1.8rem; color: var(--color-gold);">Flor & Max</span>
+    </header>
+
+    <main class="section" style="padding-top: 24px; padding-bottom: 40px;">
+      
+      <!-- Estado de Carga -->
+      <div id="passLoading" class="pass-state-box">
+        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--color-gold); margin-bottom: 12px;"></i>
+        <p style="font-weight: 600; color: var(--color-sage-dark);">Validando pase oficial...</p>
+      </div>
+
+      <!-- Estado de Error / No Encontrado -->
+      <div id="passError" class="pass-state-box" style="display: none;">
+        <i class="fas fa-exclamation-circle" style="font-size: 2.2rem; color: #D9534F; margin-bottom: 12px;"></i>
+        <h2 style="font-size: 1.5rem; margin-bottom: 8px;">Pase no encontrado</h2>
+        <p id="passErrorMessage" style="font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 20px;">
+          No pudimos validar este código de invitación.
+        </p>
+        <a href="index.html" class="btn btn-primary btn-block">
+          <i class="fas fa-home"></i> Ir a la invitación
+        </a>
+      </div>
+
+      <!-- Tarjeta del Pase Digital Confirmado -->
+      <div id="passDisplayCard" class="digital-ticket-card" style="display: none;">
+        <div class="ticket-header">
+          <img src="assets/images/monograma-flor-y-max.jpg" alt="Flor & Max" class="ticket-mini-monogram">
+          <div class="ticket-kicker">PASE OFICIAL DE INGRESO</div>
+          <h1 class="ticket-couple">Flor & Max</h1>
+          <div class="ticket-event-date">21 de Marzo de 2027 &bull; 15:00 hs</div>
+        </div>
+
+        <div class="ticket-divider-perforated">
+          <span></span>
+          <span></span>
+        </div>
+
+        <div class="ticket-body">
+          <div style="margin-bottom: 14px;">
+            <span id="passStatusBadge" class="pass-status-pill pass-status-confirmed">Confirmado</span>
+          </div>
+
+          <div class="ticket-info-block">
+            <span class="ticket-label">Invitado Titular</span>
+            <h2 class="ticket-titular-name" id="passTitularName">--</h2>
+          </div>
+
+          <div class="ticket-info-block">
+            <span class="ticket-label">Acompañantes</span>
+            <div id="passCompanionsContainer"></div>
+          </div>
+
+          <div class="ticket-meta-row">
+            <div>
+              <span class="ticket-label">Total del Grupo</span>
+              <strong id="passTotalGuests" style="color: var(--color-dark); font-size: 1rem;">--</strong>
+            </div>
+            <div>
+              <span class="ticket-label">Código</span>
+              <strong id="passCodeText" style="color: var(--color-gold-dark); font-size: 1rem; letter-spacing: 0.08em;">--</strong>
+            </div>
+          </div>
+
+          <div class="ticket-qr-wrapper">
+            <canvas id="passQrCanvas"></canvas>
+            <p class="ticket-qr-caption">Presentá este código QR al ingresar</p>
+          </div>
+
+          <button type="button" id="btnPassDownloadPng" class="btn btn-primary btn-block" style="margin-top: 14px;">
+            <i class="fas fa-download"></i> Guardar Imagen del Pase (PNG)
+          </button>
+
+          <p class="ticket-venue-foot">
+            <i class="fas fa-map-marker-alt" style="color: var(--color-gold);"></i>
+            Club de Campo María Antonia &bull; Rosario
+          </p>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 22px;">
+        <a href="recepcion.html" style="font-size: 0.78rem; color: var(--color-text-muted); text-decoration: none;">
+          <i class="fas fa-shield-alt"></i> Acceso exclusivo Portería / Recepción
+        </a>
+      </div>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-names">Flor & Max</div>
+      <p class="footer-text">21 de Marzo de 2027 &bull; Rosario, Santa Fe</p>
+    </footer>
+  </div>
+
+  <script src="assets/js/vendor/qrious.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/pass-utils.js"></script>
+  <script src="assets/js/pase.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

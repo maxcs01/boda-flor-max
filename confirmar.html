@@ -134,7 +134,7 @@
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="respEmail">Correo Electrónico <small style="color: var(--color-sage-dark); font-weight: 500;">(Opcional - para recibir la confirmación con los datos de la boda)</small></label>
+              <label class="form-label" for="respEmail">Correo Electrónico <small style="color: var(--color-sage-dark); font-weight: 500;">(Opcional - para recibir tu Pase QR y datos por mail)</small></label>
               <input type="email" id="respEmail" class="form-control" placeholder="Ej: lucas@gmail.com">
             </div>
           </div>
@@ -328,6 +328,36 @@
           <i class="fab fa-whatsapp" style="font-size: 24px;"></i> Enviar Mensaje a <span id="recipientNameDisplay">los Novios</span>
         </a>
 
+        <!-- TARJETA DE PASE DIGITAL CON QR CODE PARA LA FIESTA -->
+        <div id="successQrCard" class="qr-pass-card" style="display: none;">
+          <div class="qr-pass-header">
+            <span class="qr-pass-kicker">TU PASE DIGITAL PARA LA FIESTA</span>
+            <h3 class="qr-pass-title">Presentalo en la puerta</h3>
+          </div>
+
+          <div class="qr-pass-body">
+            <div class="qr-canvas-frame">
+              <canvas id="successQrCanvas"></canvas>
+            </div>
+            <div class="qr-pass-code-pill" id="successPassIdBadge">FM-XXXXXX</div>
+            <p class="qr-pass-hint">
+              Al escanear este código en el ingreso, se mostrará tu nombre, apellido y tus acompañantes confirmados.
+            </p>
+
+            <div class="qr-pass-actions">
+              <button type="button" id="btnDownloadPassPng" class="btn btn-primary btn-block">
+                <i class="fas fa-download"></i> Guardar Pase QR (Imagen)
+              </button>
+              <a id="btnOpenPassLink" href="#" target="_blank" class="btn btn-outline-gold btn-block" style="margin-top: 10px;">
+                <i class="fas fa-external-link-alt"></i> Ver Pase Online
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estado del envío por correo electrónico -->
+        <div id="emailStatusBanner" class="email-status-banner" style="display: none;"></div>
+
         <!-- Tarjeta Resumen de Confirmación -->
         <div style="background: #FFF; border: 1px solid var(--color-gold-light); border-radius: var(--radius-lg); padding: 24px 20px; text-align: left; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border); padding-bottom: 10px; margin-bottom: 12px;">
@@ -378,7 +408,9 @@
   <div id="toastNotice" class="toast-notice"></div>
 
   <!-- Scripts -->
+  <script src="assets/js/vendor/qrious.min.js"></script>
   <script src="assets/js/config.js"></script>
+  <script src="assets/js/pass-utils.js"></script>
   <script src="assets/js/rsvp.js"></script>
   <script src="assets/js/main.js"></script>
 </body>

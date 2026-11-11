@@ -1487,3 +1487,687 @@ textarea.form-control {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+
+/* ============================================================
+   SISTEMA DE PASE DIGITAL QR Y CONTROL DE PORTERÍA
+   ============================================================ */
+
+.qr-pass-card {
+  background: #FFFDF9;
+  border: 2px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 22px;
+  box-shadow: 0 14px 36px rgba(43, 47, 44, 0.12);
+  text-align: center;
+}
+
+.qr-pass-header {
+  background: linear-gradient(135deg, #4B5842 0%, #3F5247 100%);
+  color: #FFF;
+  padding: 18px 16px;
+}
+
+.qr-pass-kicker {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-gold-light);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.qr-pass-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  color: #FFF;
+  font-weight: 600;
+}
+
+.qr-pass-body {
+  padding: 22px 18px 20px;
+}
+
+.qr-canvas-frame {
+  display: inline-flex;
+  padding: 10px;
+  background: #FFF;
+  border: 1px solid var(--color-gold-light);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.qr-canvas-frame canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.qr-pass-code-pill {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 6px 18px;
+  border-radius: var(--radius-full);
+  background: var(--color-sage-light);
+  color: #4a5d4e;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  border: 1px solid rgba(74, 93, 78, 0.2);
+}
+
+.qr-pass-hint {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin: 12px 0 18px;
+  line-height: 1.45;
+}
+
+.email-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.email-status-banner i {
+  font-size: 1.1rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.email-status-ok {
+  background: #E8F5E9;
+  color: #1B5E20;
+  border: 1px solid #C8E6C9;
+}
+
+.email-status-warn {
+  background: #FFF8E7;
+  color: #8C5E14;
+  border: 1px solid #F3D18E;
+}
+
+.email-status-info {
+  background: var(--color-sage-light);
+  color: var(--color-sage-dark);
+  border: 1px solid #CBD8D0;
+}
+
+/* ============================================================
+   PÁGINA DE PASE DIGITAL INDIVIDUAL (pase.html)
+   ============================================================ */
+
+.pass-state-box {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 40px 24px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.digital-ticket-card {
+  background: #FFFDF9;
+  border: 1.5px solid var(--color-gold-light);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 48px rgba(43, 47, 44, 0.14);
+}
+
+.ticket-header {
+  background: linear-gradient(180deg, #4B5842 0%, #3F5247 100%);
+  color: #FFF;
+  text-align: center;
+  padding: 26px 20px 24px;
+}
+
+.ticket-mini-monogram {
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-gold-light);
+  margin: 0 auto 10px;
+  display: block;
+}
+
+.ticket-kicker {
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  color: var(--color-gold-light);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ticket-couple {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: #FFF;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.ticket-event-date {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 6px;
+}
+
+.ticket-divider-perforated {
+  position: relative;
+  height: 18px;
+  background: #FFFDF9;
+  border-bottom: 2px dashed var(--color-border);
+  margin-top: -9px;
+}
+
+.ticket-divider-perforated span {
+  position: absolute;
+  top: 7px;
+  width: 22px;
+  height: 22px;
+  background: var(--color-cream);
+  border-radius: 50%;
+}
+
+.ticket-divider-perforated span:first-child { left: -11px; }
+.ticket-divider-perforated span:last-child { right: -11px; }
+
+.ticket-body {
+  padding: 22px 22px 26px;
+  text-align: center;
+}
+
+.pass-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.pass-status-confirmed {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #C8E6C9;
+}
+
+.pass-status-entered {
+  background: #FFF3E0;
+  color: #E65100;
+  border: 1px solid #FFE0B2;
+}
+
+.ticket-info-block {
+  text-align: left;
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.ticket-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold-dark);
+  margin-bottom: 4px;
+}
+
+.ticket-titular-name {
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #4a5d4e;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.pass-companions-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  text-align: left;
+}
+
+.pass-companions-list li {
+  padding: 6px 0;
+  border-bottom: 1px dashed #EEEAE2;
+  font-size: 0.92rem;
+  color: var(--color-dark);
+}
+
+.pass-companions-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.pass-no-companions {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.pass-child-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-sage-light);
+  color: var(--color-sage-dark);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.ticket-meta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: var(--color-gold-soft);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 18px;
+}
+
+.ticket-qr-wrapper {
+  background: #FFF;
+  border: 1px solid var(--color-gold-light);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: inline-block;
+}
+
+.ticket-qr-caption {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin: 8px 0 0;
+}
+
+.ticket-venue-foot {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 18px 0 0;
+}
+
+/* ============================================================
+   PÁGINA DE PORTERÍA Y ESCÁNER QR (recepcion.html)
+   ============================================================ */
+
+.reception-pin-input {
+  text-align: center;
+  font-size: 1.8rem;
+  letter-spacing: 0.35em;
+  font-weight: 700;
+  max-width: 240px;
+  margin: 0 auto;
+}
+
+.reception-pin-error {
+  color: #C62828;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.reception-stats-card {
+  background: linear-gradient(135deg, #4B5842 0%, #3A4733 100%);
+  color: #FFF;
+  border-radius: var(--radius-lg);
+  padding: 18px 18px 14px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-md);
+}
+
+.reception-stats-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.reception-stat-big {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 4px 0 2px;
+}
+
+.reception-stat-big small {
+  font-size: 0.85rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.reception-stat-sub {
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.btn-reception-mini {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #FFF;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-mini-logout {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.reception-progress-track {
+  height: 7px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 12px 0 8px;
+}
+
+.reception-progress-fill {
+  height: 100%;
+  background: #EAD8B1;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.reception-sync-bar {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.pending-sync-banner {
+  background: #FFF8E7;
+  border: 1px solid #F3D18E;
+  color: #8C5E14;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pending-sync-banner button {
+  background: #C5A059;
+  color: #FFF;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reception-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.reception-tab-btn {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: #FFF;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: var(--transition);
+}
+
+.reception-tab-btn.active {
+  background: #4B5842;
+  color: #FFF;
+  border-color: #4B5842;
+  box-shadow: var(--shadow-sm);
+}
+
+.qr-reader-box {
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #1C1F1D;
+  min-height: 60px;
+}
+
+.directory-filters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.filter-pill-btn {
+  border: 1px solid var(--color-border);
+  background: #FAF8F5;
+  color: var(--color-text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-pill-btn.active {
+  background: var(--color-sage-light);
+  color: #4a5d4e;
+  border-color: #4a5d4e;
+}
+
+.reception-guest-directory {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.directory-guest-row {
+  width: 100%;
+  text-align: left;
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--font-sans);
+}
+
+.directory-guest-row:hover {
+  border-color: var(--color-gold);
+  box-shadow: var(--shadow-sm);
+}
+
+.directory-guest-row.row-entered {
+  background: #F4FAF5;
+  border-color: #C8E6C9;
+}
+
+.dir-titular-name {
+  font-weight: 700;
+  color: #4a5d4e;
+  font-size: 0.96rem;
+  margin-bottom: 3px;
+}
+
+.dir-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+.dir-code {
+  background: #FAF8F5;
+  padding: 1px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  font-weight: 600;
+}
+
+.dir-companions {
+  font-size: 0.78rem;
+  color: #555;
+  margin-top: 4px;
+}
+
+.dir-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.dir-badge-pending {
+  background: #FFF8E7;
+  color: #9F7932;
+}
+
+.dir-badge-in {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.empty-directory-msg {
+  text-align: center;
+  padding: 28px 12px;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+/* Modal de resultado de lectura QR */
+.scan-result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 24, 21, 0.78);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.scan-result-card {
+  width: 100%;
+  max-width: 440px;
+  background: #FFF;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-status-banner {
+  padding: 18px 16px;
+  color: #FFF;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.banner-valid { background: #2E7D32; }
+.banner-warning { background: #E65100; }
+.banner-invalid { background: #C62828; }
+
+.scan-result-body {
+  padding: 22px 20px 24px;
+}
+
+.scan-result-top-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.modal-total-badge {
+  background: var(--color-sage-light);
+  color: #4a5d4e;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.modal-titular-name {
+  font-family: var(--font-serif);
+  font-size: 1.85rem;
+  color: #2B2F2C;
+  font-weight: 700;
+  margin: 0 0 14px;
+  line-height: 1.15;
+}
+
+.modal-companions-box {
+  background: #FAF8F5;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.btn-confirm-entry {
+  background: #2E7D32;
+  color: #FFF;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 16px;
+  border: none;
+  box-shadow: 0 8px 20px rgba(46, 125, 50, 0.35);
+}
+
+.btn-undo-checkin {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: #C62828;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px;
+}

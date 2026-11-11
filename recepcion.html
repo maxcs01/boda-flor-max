@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portería &amp; Check-in QR | Boda Flor &amp; Max</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#4B5842">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Great+Vibes&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+  <div class="site-wrapper">
+    <header class="rsvp-header-nav">
+      <a href="index.html" class="back-link">
+        <i class="fas fa-arrow-left"></i> Invitación
+      </a>
+      <span class="script-font" style="font-size: 1.7rem; color: var(--color-gold);">Portería</span>
+    </header>
+
+    <main class="section" style="padding-top: 20px; padding-bottom: 50px;">
+
+      <!-- PANTALLA 1: ACCESO POR PIN DE PORTERÍA -->
+      <section id="receptionLoginSection" class="rsvp-step-card" style="text-align: center; padding: 32px 22px;">
+        <div class="section-icon" style="margin: 0 auto 14px;">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+        <h1 class="section-title" style="font-size: 1.9rem; margin-bottom: 6px;">Control de Portería</h1>
+        <p style="font-size: 0.88rem; color: var(--color-text-muted); margin-bottom: 22px;">
+          Ingresá el PIN numérico habilitado para leer los códigos QR y registrar el ingreso de los invitados.
+        </p>
+
+        <form id="receptionLoginForm">
+          <div class="form-group">
+            <input
+              type="password"
+              id="receptionPinInput"
+              class="form-control reception-pin-input"
+              inputmode="numeric"
+              maxlength="8"
+              placeholder="••••"
+              autocomplete="off"
+              required
+            >
+          </div>
+          <p id="pinErrorText" class="reception-pin-error" style="display: none;"></p>
+          <button type="submit" id="btnPinSubmit" class="btn btn-primary btn-block">
+            <i class="fas fa-unlock-alt"></i> Ingresar a Portería
+          </button>
+        </form>
+      </section>
+
+      <!-- PANTALLA 2: PANEL ACTIVO DE PORTERÍA -->
+      <section id="receptionDashboardSection" style="display: none;">
+
+        <!-- Barra de estado y resumen -->
+        <div class="reception-stats-card">
+          <div class="reception-stats-top">
+            <div>
+              <span class="ticket-label" style="color: #EAD8B1;">INGRESARON A LA FIESTA</span>
+              <div class="reception-stat-big">
+                <span id="statPeopleCount">0 / 0</span> <small>personas</small>
+              </div>
+              <div class="reception-stat-sub" id="statGroupsCount">0 / 0 grupos</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+              <button type="button" class="btn-reception-mini" onclick="refreshReceptionData(false)">
+                <i class="fas fa-sync-alt"></i> Actualizar
+              </button>
+              <button type="button" class="btn-reception-mini btn-mini-logout" onclick="logoutReception()">
+                <i class="fas fa-sign-out-alt"></i> Salir
+              </button>
+            </div>
+          </div>
+          <div class="reception-progress-track">
+            <div class="reception-progress-fill" id="statProgressFill" style="width: 0%;"></div>
+          </div>
+          <div class="reception-sync-bar" id="syncStatusLabel">
+            <i class="fas fa-check-circle"></i> Listo para escanear
+          </div>
+        </div>
+
+        <!-- Aviso de registros offline pendientes -->
+        <div id="pendingSyncBanner" class="pending-sync-banner" style="display: none;">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <span>0 ingresos pendientes de subir.</span>
+          <button type="button" onclick="refreshReceptionData(false)">Subir ahora</button>
+        </div>
+
+        <!-- Pestañas: Escáner QR vs Lista Manual -->
+        <div class="reception-tabs">
+          <button type="button" id="tabBtnCamera" class="reception-tab-btn active" onclick="switchReceptionTab('camera')">
+            <i class="fas fa-qrcode"></i> Escanear QR
+          </button>
+          <button type="button" id="tabBtnList" class="reception-tab-btn" onclick="switchReceptionTab('list')">
+            <i class="fas fa-list-ul"></i> Lista / Buscar
+          </button>
+        </div>
+
+        <!-- PANEL 1: ESCÁNER DE CÁMARA QR -->
+        <div id="panelCamera" class="rsvp-step-card" style="padding: 18px;">
+          <button type="button" id="btnToggleCamera" class="btn btn-primary btn-block" onclick="toggleQrCamera()">
+            <i class="fas fa-camera"></i> Activar Cámara Escáner
+          </button>
+          <p id="cameraStatusNote" style="text-align: center; font-size: 0.8rem; color: var(--color-text-muted); margin: 10px 0 12px;">
+            Tocá el botón arriba para habilitar la cámara del celular
+          </p>
+
+          <div id="qrReaderContainer" class="qr-reader-box"></div>
+
+          <div style="margin-top: 16px; border-top: 1px solid var(--color-border); padding-top: 14px;">
+            <label class="form-label" for="manualCodeInput" style="font-size: 0.8rem;">¿Problemas con la cámara? Ingresá el código manual:</label>
+            <form id="manualCodeForm" style="display: flex; gap: 8px;">
+              <input type="text" id="manualCodeInput" class="form-control" placeholder="Ej: FM-8F2A9C" style="text-transform: uppercase;">
+              <button type="submit" class="btn btn-secondary" style="white-space: nowrap; padding: 0 16px;">Buscar</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- PANEL 2: DIRECTORIO Y BÚSQUEDA MANUAL -->
+        <div id="panelList" class="rsvp-step-card" style="display: none; padding: 18px;">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <input type="search" id="receptionSearchInput" class="form-control" placeholder="Buscar por nombre, apellido o código FM-...">
+          </div>
+
+          <div class="directory-filters">
+            <button type="button" class="filter-pill-btn active" onclick="setDirectoryFilter('all', this)">Todos</button>
+            <button type="button" class="filter-pill-btn" onclick="setDirectoryFilter('pending', this)">Faltan entrar</button>
+            <button type="button" class="filter-pill-btn" onclick="setDirectoryFilter('entered', this)">Ya ingresaron</button>
+          </div>
+
+          <div id="receptionGuestList" class="reception-guest-directory">
+            <!-- Generado dinámicamente por recepcion.js -->
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL DE RESULTADO AL ESCANEAR QR O SELECCIONAR INVITADO -->
+  <div id="scanResultModal" class="scan-result-overlay" style="display: none;">
+    <div class="scan-result-card">
+      <div id="modalStatusBanner" class="modal-status-banner banner-valid">
+        <i class="fas fa-check-circle"></i> ACCESO AUTORIZADO
+      </div>
+
+      <div class="scan-result-body">
+        <div class="scan-result-top-meta">
+          <span class="ticket-label">INVITADO TITULAR</span>
+          <span class="modal-total-badge" id="modalTotalBadge">1 PERSONA</span>
+        </div>
+
+        <h2 class="modal-titular-name" id="modalTitularName">--</h2>
+
+        <div class="modal-companions-box">
+          <span class="ticket-label" style="margin-bottom: 6px; display: block;">ACOMPAÑANTES DEL GRUPO</span>
+          <div id="modalCompanionsContainer"></div>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--color-text-muted); margin-bottom: 16px;">
+          Código de Pase: <strong id="modalPassCode">--</strong>
+        </div>
+
+        <div id="modalActionArea">
+          <!-- Botones inyectados dinámicamente por JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastNotice" class="toast-notice"></div>
+
+  <script src="assets/js/vendor/html5-qrcode.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/pass-utils.js"></script>
+  <script src="assets/js/recepcion.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
