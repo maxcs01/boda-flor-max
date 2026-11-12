@@ -3,11 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Portería &amp; Check-in QR | Boda Flor &amp; Max</title>
+  <title>App Validador QR | Boda Flor &amp; Max</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#4B5842">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Validador F&amp;M">
 
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+  <link rel="manifest" href="manifest-validador.json">
+  <link rel="apple-touch-icon" href="assets/images/icon-validador-192.png">
+  <link rel="icon" type="image/png" href="assets/images/icon-validador-192.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,22 +24,35 @@
 
   <div class="site-wrapper">
     <header class="rsvp-header-nav">
-      <a href="index.html" class="back-link">
-        <i class="fas fa-arrow-left"></i> Invitación
-      </a>
-      <span class="script-font" style="font-size: 1.7rem; color: var(--color-gold);">Portería</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <img src="assets/images/icon-validador-192.png" alt="Logo" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--color-gold-light);">
+        <span style="font-weight: 700; font-size: 0.9rem; color: var(--color-sage-dark); letter-spacing: 0.04em;">APP VALIDADOR</span>
+      </div>
+      <span class="script-font" style="font-size: 1.65rem; color: var(--color-gold);">Flor & Max</span>
     </header>
 
-    <main class="section" style="padding-top: 20px; padding-bottom: 50px;">
+    <main class="section" style="padding-top: 18px; padding-bottom: 50px;">
 
-      <!-- PANTALLA 1: ACCESO POR PIN DE PORTERÍA -->
-      <section id="receptionLoginSection" class="rsvp-step-card" style="text-align: center; padding: 32px 22px;">
-        <div class="section-icon" style="margin: 0 auto 14px;">
-          <i class="fas fa-shield-alt"></i>
+      <!-- Banner opcional para instalar como App en el celular del recepcionista -->
+      <div id="pwaInstallBanner" class="pwa-install-banner" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i class="fas fa-mobile-alt" style="font-size: 1.35rem; color: #C5A059;"></i>
+          <div>
+            <strong style="display: block; font-size: 0.85rem;">Instalar App Validador</strong>
+            <span id="pwaInstallSubtitle" style="font-size: 0.75rem; opacity: 0.9;">Agregalo a tu celular para usarlo como app en la puerta.</span>
+          </div>
         </div>
-        <h1 class="section-title" style="font-size: 1.9rem; margin-bottom: 6px;">Control de Portería</h1>
-        <p style="font-size: 0.88rem; color: var(--color-text-muted); margin-bottom: 22px;">
-          Ingresá el PIN numérico habilitado para leer los códigos QR y registrar el ingreso de los invitados.
+        <button type="button" id="btnPwaInstall" class="btn-pwa-install" style="display: none;">Instalar</button>
+      </div>
+
+      <!-- PANTALLA 1: ACCESO EXCLUSIVO POR PIN (1 DISPOSITIVO POR VEZ) -->
+      <section id="receptionLoginSection" class="rsvp-step-card" style="text-align: center; padding: 30px 22px;">
+        <div class="section-icon" style="margin: 0 auto 14px;">
+          <i class="fas fa-qrcode"></i>
+        </div>
+        <h1 class="section-title" style="font-size: 1.85rem; margin-bottom: 6px;">Validador de Portería</h1>
+        <p style="font-size: 0.86rem; color: var(--color-text-muted); margin-bottom: 20px;">
+          Uso exclusivo para recepción. Solo <strong>1 dispositivo autorizado</strong> puede validar códigos QR y marcar presentes en la planilla.
         </p>
 
         <form id="receptionLoginForm">
@@ -51,20 +69,29 @@
             >
           </div>
           <p id="pinErrorText" class="reception-pin-error" style="display: none;"></p>
+
+          <!-- Aviso si ya hay otro celular conectado validando -->
+          <div id="sessionLockedBox" class="session-locked-box" style="display: none;">
+            <p id="sessionLockedMsg" style="font-size: 0.84rem; margin-bottom: 10px;"></p>
+            <button type="button" id="btnForceTakeover" class="btn btn-outline-gold btn-sm">
+              <i class="fas fa-exchange-alt"></i> Transferir acceso a este celular
+            </button>
+          </div>
+
           <button type="submit" id="btnPinSubmit" class="btn btn-primary btn-block">
-            <i class="fas fa-unlock-alt"></i> Ingresar a Portería
+            <i class="fas fa-unlock-alt"></i> Ingresar al App Validador
           </button>
         </form>
       </section>
 
-      <!-- PANTALLA 2: PANEL ACTIVO DE PORTERÍA -->
+      <!-- PANTALLA 2: PANEL ACTIVO DE RECEPCIÓN -->
       <section id="receptionDashboardSection" style="display: none;">
 
-        <!-- Barra de estado y resumen -->
+        <!-- Barra de estado y resumen en vivo -->
         <div class="reception-stats-card">
           <div class="reception-stats-top">
             <div>
-              <span class="ticket-label" style="color: #EAD8B1;">INGRESARON A LA FIESTA</span>
+              <span class="ticket-label" style="color: #EAD8B1;">PRESENTES EN LA FIESTA</span>
               <div class="reception-stat-big">
                 <span id="statPeopleCount">0 / 0</span> <small>personas</small>
               </div>
@@ -75,7 +102,7 @@
                 <i class="fas fa-sync-alt"></i> Actualizar
               </button>
               <button type="button" class="btn-reception-mini btn-mini-logout" onclick="logoutReception()">
-                <i class="fas fa-sign-out-alt"></i> Salir
+                <i class="fas fa-sign-out-alt"></i> Liberar y Salir
               </button>
             </div>
           </div>
@@ -83,14 +110,14 @@
             <div class="reception-progress-fill" id="statProgressFill" style="width: 0%;"></div>
           </div>
           <div class="reception-sync-bar" id="syncStatusLabel">
-            <i class="fas fa-check-circle"></i> Listo para escanear
+            <i class="fas fa-shield-alt"></i> Sesión única activa &bull; Listo para escanear
           </div>
         </div>
 
         <!-- Aviso de registros offline pendientes -->
         <div id="pendingSyncBanner" class="pending-sync-banner" style="display: none;">
           <i class="fas fa-cloud-upload-alt"></i>
-          <span>0 ingresos pendientes de subir.</span>
+          <span>0 presentes pendientes de subir.</span>
           <button type="button" onclick="refreshReceptionData(false)">Subir ahora</button>
         </div>
 
@@ -104,22 +131,22 @@
           </button>
         </div>
 
-        <!-- PANEL 1: ESCÁNER DE CÁMARA QR -->
+        <!-- PANEL 1: ESCÁNER DE CÁMARA QR (REGISTRA PRESENTE AUTOMÁTICAMENTE) -->
         <div id="panelCamera" class="rsvp-step-card" style="padding: 18px;">
           <button type="button" id="btnToggleCamera" class="btn btn-primary btn-block" onclick="toggleQrCamera()">
             <i class="fas fa-camera"></i> Activar Cámara Escáner
           </button>
           <p id="cameraStatusNote" style="text-align: center; font-size: 0.8rem; color: var(--color-text-muted); margin: 10px 0 12px;">
-            Tocá el botón arriba para habilitar la cámara del celular
+            Al escanear el QR, se muestran los nombres y se marca <strong>Presente</strong> automáticamente en la planilla.
           </p>
 
           <div id="qrReaderContainer" class="qr-reader-box"></div>
 
           <div style="margin-top: 16px; border-top: 1px solid var(--color-border); padding-top: 14px;">
-            <label class="form-label" for="manualCodeInput" style="font-size: 0.8rem;">¿Problemas con la cámara? Ingresá el código manual:</label>
+            <label class="form-label" for="manualCodeInput" style="font-size: 0.8rem;">Ingreso manual por código de pase:</label>
             <form id="manualCodeForm" style="display: flex; gap: 8px;">
               <input type="text" id="manualCodeInput" class="form-control" placeholder="Ej: FM-8F2A9C" style="text-transform: uppercase;">
-              <button type="submit" class="btn btn-secondary" style="white-space: nowrap; padding: 0 16px;">Buscar</button>
+              <button type="submit" class="btn btn-secondary" style="white-space: nowrap; padding: 0 16px;">Validar</button>
             </form>
           </div>
         </div>
@@ -132,8 +159,8 @@
 
           <div class="directory-filters">
             <button type="button" class="filter-pill-btn active" onclick="setDirectoryFilter('all', this)">Todos</button>
-            <button type="button" class="filter-pill-btn" onclick="setDirectoryFilter('pending', this)">Faltan entrar</button>
-            <button type="button" class="filter-pill-btn" onclick="setDirectoryFilter('entered', this)">Ya ingresaron</button>
+            <button type="button" class="filter-pill-btn" onclick="setDirectoryFilter('pending', this)">Faltan llegar</button>
+            <button type="button" class="filter-pill-btn" onclick="setDirectoryFilter('entered', this)">Presentes</button>
           </div>
 
           <div id="receptionGuestList" class="reception-guest-directory">
@@ -149,7 +176,7 @@
   <div id="scanResultModal" class="scan-result-overlay" style="display: none;">
     <div class="scan-result-card">
       <div id="modalStatusBanner" class="modal-status-banner banner-valid">
-        <i class="fas fa-check-circle"></i> ACCESO AUTORIZADO
+        <i class="fas fa-check-circle"></i> PRESENTE REGISTRADO
       </div>
 
       <div class="scan-result-body">

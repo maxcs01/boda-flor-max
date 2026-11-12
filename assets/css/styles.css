@@ -2171,3 +2171,40 @@ textarea.form-control {
   cursor: pointer;
   padding: 6px;
 }
+
+
+.pwa-install-banner {
+  background: #4B5842;
+  color: #FFF;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-pwa-install {
+  background: #C5A059;
+  color: #FFF;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 7px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.session-locked-box {
+  background: #FFF8E7;
+  border: 1.5px solid #F3D18E;
+  border-left: 4px solid #D97706;
+  color: #8C5E14;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}

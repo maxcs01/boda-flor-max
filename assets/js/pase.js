@@ -64,7 +64,7 @@ function renderGuestPass(pass, cardEl) {
   cardEl.style.display = 'block';
 
   const escape = window.PassUtils.escapeHtml;
-  const passUrl = pass.passUrl || window.PassUtils.buildPassUrl(pass.id);
+  const qrContent = pass.qrPayload || pass.id;
 
   const badgeEl = document.getElementById('passStatusBadge');
   if (badgeEl) {
@@ -96,7 +96,7 @@ function renderGuestPass(pass, cardEl) {
 
   const qrCanvas = document.getElementById('passQrCanvas');
   if (qrCanvas) {
-    window.PassUtils.renderQrToCanvas(qrCanvas, passUrl, 220);
+    window.PassUtils.renderQrToCanvas(qrCanvas, qrContent, 220);
   }
 
   const btnDownload = document.getElementById('btnPassDownloadPng');

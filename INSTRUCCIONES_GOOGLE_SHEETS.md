@@ -1,19 +1,22 @@
 # INSTRUÇÕES DE ATUALIZAÇÃO NO GOOGLE SHEETS
-## Boda Flor & Max — Versão 5.0 (Correção de E-mail + Pase QR + Portaria)
+## Boda Flor & Max — Versão 5.1 (App Validador Exclusivo + QR Assinado + E-mail)
 
 Planilha oficial: 👉 [Abrir Google Sheets](https://docs.google.com/spreadsheets/d/15U2O1gAzXvVkAWobayX6wO_MYeyNyJu3WC-Elx4Xn4U/edit?gid=0#gid=0)
 
 ---
 
-### 📌 Novidades da Versão 5.0:
-1. **Correção do Disparo Automático de E-mail**: Agora o e-mail de confirmação inclui a **imagem do Código QR embutida** + botão direto para o Pase Digital Online.
-2. **Pase Digital com QR Code para Cada Confirmação**:
-   - Cada convidado confirmado (e seu grupo de acompanhantes) recebe um código único na **Coluna K (`ID Pase QR`)** e o link na **Coluna L (`Link del Pase`)**.
-   - Ao confirmar pelo site, o QR Code também aparece na tela na hora (com botão de **baixar imagem PNG**) e vai em formato de link na mensagem automática do WhatsApp.
-3. **Sistema de Portaria para o Dia da Festa (`recepcion.html`)**:
-   - Acesse `https://bodaflor-max.netlify.app/recepcion.html` no celular da entrada.
-   - **PIN padrão de acesso da portaria:** `2103` *(pode ser alterado na linha `var RECEPTION_PIN` dentro do `google-apps-script.js`)*.
-   - Ao ler o QR Code do convidado, mostra o **Nome e Sobrenome do titular**, todos os **Acompanhantes** (se houver) e registra o horário exato de entrada na **Coluna M (`Ingreso / Check-in`)**.
+### 📌 Novidades da Versão 5.1:
+1. **QR Code Exclusivo do App Validador (Câmeras comuns não leem os dados)**:
+   - O QR contém um token criptografado assinado (`BODA-FM|ID|ASSINATURA`). Se uma pessoa qualquer apontar a câmera normal do celular para o QR, nenhum site abre e nenhum nome aparece.
+   - O convidado recebe o **link para abrir e exibir o QR** no e-mail e na mensagem do WhatsApp para os noivos (`pase.html?id=...`).
+2. **App Validador Instalável (PWA) com Sessão Única (`recepcion.html`)**:
+   - Acesse `https://bodaflor-max.netlify.app/recepcion.html` no celular de quem ficará na porta e toque em **"Instalar"** (ou *"Adicionar à tela inicial"* no iPhone) para usar como um **aplicativo próprio**.
+   - **PIN padrão da portaria:** `2103` *(alterável em `RECEPTION_PIN` dentro do [`google-apps-script.js`](file:///C:/Users/Windows/.gemini/antigravity/scratch/boda-flor-y-max/google-apps-script.js))*.
+   - **Somente 1 pessoa/aparelho valida por vez**: ao fazer login com o PIN, a sessão fica travada para aquele celular. Caso precise trocar de aparelho, clique em *"Transferir acceso a este celular"* ou use o menu **`💌 Boda Flor & Max > 🔓 Liberar Dispositivo Activo de Portería`** na planilha.
+3. **Check-in Automático ("Presente") no Excel / Google Sheets**:
+   - Assim que o recepcionista escaneia o QR pelo App, aparecem na tela o **Nome e Sobrenome do titular**, os **Acompanhantes** (se houver) e **automaticamente** grava **`Presente - HH:mm hs`** na **Coluna M (`Presencia / Check-in`)**.
+4. **Correção do Disparo Automático de E-mail**:
+   - E-mail corrigido já incluindo a imagem do QR Code embutida + botão com o link para abrir o passe QR.
 
 ---
 

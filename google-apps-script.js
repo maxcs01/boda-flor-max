@@ -1,23 +1,17 @@
 /**
- * GOOGLE APPS SCRIPT - BODA FLOR & MAX (Versión 5.0 con Pase QR Digital y Portería)
- * =========================================================================
+ * GOOGLE APPS SCRIPT - BODA FLOR & MAX (Versión 5.1)
+ * App Validador Exclusivo de Portería (Sesión Única) + Token QR Firmado + E-mail con QR
+ * ====================================================================================
  * Planilla: https://docs.google.com/spreadsheets/d/15U2O1gAzXvVkAWobayX6wO_MYeyNyJu3WC-Elx4Xn4U/edit?gid=0#gid=0
- *
- * FUNCIONALIDADES PRINCIPALES:
- * 1. Validación estricta antiduplicados por Nombre Y Apellido completo.
- * 2. Generación de ID único por reserva (ej: FM-8F2A9C) y Link de Pase QR.
- * 3. Corrección y diagnóstico de e-mail con Pase QR adjunto (inline + PNG).
- * 4. Endpoints de Pase Individual (?action=getPass&id=...) y Portería (?action=getReceptionList&pin=...).
- * 5. Registro de Check-in en tiempo real en la fiesta con protección por PIN en servidor.
- * 6. Menú personalizado en Google Sheets para autorizar e-mails y generar QRs retroactivos.
- * =========================================================================
  */
 
 // 🔐 PIN DE PORTERÍA (Validado únicamente en el servidor)
-// Cambiá este código numérico si deseás otra contraseña para la puerta.
 var RECEPTION_PIN = "2103";
 
-// 🌐 URL base del Pase Digital publicado en Netlify
+// 🔑 CLAVE SECRETA PARA FIRMAR LOS CÓDIGOS QR (Solo el App Validador + Servidor los validan)
+var QR_SECRET_KEY = "BodaFlorYMax_21032027_SecretQR";
+
+// 🌐 URL base de la página donde el invitado visualiza su QR (para Email y WhatsApp)
 var BASE_PASS_URL = "https://bodaflor-max.netlify.app/pase.html";
 
 var SHEET_HEADERS = [
@@ -33,11 +27,11 @@ var SHEET_HEADERS = [
   "Estado",
   "ID Pase QR",
   "Link del Pase",
-  "Ingreso / Check-in"
+  "Presencia / Check-in"
 ];
 
 /**
- * Crea el menú de utilidades directamente en la barra superior de Google Sheets
+ * Menú de utilidades en la barra superior de Google Sheets
  */
 function onOpen() {
   try {
@@ -45,7 +39,8 @@ function onOpen() {
       .createMenu("💌 Boda Flor & Max")
       .addItem("✅ Autorizar y Probar Envío de E-mail", "autorizarYProbarEmail")
       .addItem("🎫 Generar QRs para Confirmados Existentes", "generarQRsFaltantes")
-      .addItem("📊 Ver Resumen de Portería", "mostrarResumenPorteria")
+      .addItem("🔓 Liberar Dispositivo Activo de Portería", "liberarSesionPorteriaManual")
+      .addItem("📊 Ver Resumen de Presencia (Portería)", "mostrarResumenPorteria")
       .addToUi();
   } catch (e) {
     Logger.log("onOpen UI no disponible: " + e.toString());
@@ -53,9 +48,74 @@ function onOpen() {
 }
 
 /**
- * Maneja peticiones POST:
- * - action === "checkin": Registra el ingreso en la puerta (requiere PIN).
- * - Por defecto: Registra nueva confirmación RSVP, genera Pase QR y envía e-mail.
+ * Firma criptográfica HMAC-SHA256 corta para que el QR sea opaco a cámaras comunes
+ * Formato del QR: BODA-FM|<PASS_ID>|<FIRMA_8_HEX>
+ */
+function computePassSignature(passId) {
+  var cleanId = (passId || "").toString().trim().toUpperCase();
+  var rawBytes = Utilities.computeHmacSha256Signature(cleanId, QR_SECRET_KEY);
+  var hex = "";
+  for (var i = 0; i < rawBytes.length; i++) {
+    var b = (rawBytes[i] < 0 ? rawBytes[i] + 256 : rawBytes[i]).toString(16);
+    if (b.length === 1) hex += "0";
+    hex += b;
+  }
+  return hex.substring(0, 8).toUpperCase();
+}
+
+function buildSignedQrPayload(passId) {
+  var cleanId = (passId || "").toString().trim().toUpperCase();
+  if (!cleanId) return "";
+  return "BODA-FM|" + cleanId + "|" + computePassSignature(cleanId);
+}
+
+function verifySignedQrPayload(rawQrOrId) {
+  var str = (rawQrOrId || "").toString().trim().toUpperCase();
+  if (!str) return { valid: false, passId: "" };
+
+  if (str.indexOf("BODA-FM|") === 0) {
+    var parts = str.split("|");
+    if (parts.length !== 3) return { valid: false, passId: "", reason: "bad_format" };
+    var id = parts[1];
+    var sig = parts[2];
+    if (sig === computePassSignature(id)) {
+      return { valid: true, passId: id, signed: true };
+    }
+    return { valid: false, passId: id, reason: "invalid_signature" };
+  }
+
+  return { valid: true, passId: str, signed: false };
+}
+
+/**
+ * Gestión de Sesión Única en Portería (1 sola persona / dispositivo activo por vez)
+ */
+function getActiveReceptionSession() {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty("ACTIVE_RECEPTION_SESSION");
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setActiveReceptionSession(sessionObj) {
+  PropertiesService.getScriptProperties().setProperty("ACTIVE_RECEPTION_SESSION", JSON.stringify(sessionObj));
+}
+
+function clearActiveReceptionSession() {
+  PropertiesService.getScriptProperties().deleteProperty("ACTIVE_RECEPTION_SESSION");
+}
+
+function liberarSesionPorteriaManual() {
+  clearActiveReceptionSession();
+  try {
+    SpreadsheetApp.getUi().alert("✅ Sesión de portería liberada. Ahora un nuevo dispositivo puede ingresar con el PIN.");
+  } catch (e) {}
+}
+
+/**
+ * Maneja todas las peticiones POST
  */
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -72,17 +132,22 @@ function doPost(e) {
       data = e.parameter;
     }
 
-    // RUTA 1: Check-in desde la página de Portería (recepcion.html)
+    if (data.action === "loginReception") {
+      return handleReceptionLogin(sheet, data);
+    }
+
+    if (data.action === "logoutReception") {
+      return handleReceptionLogout(data);
+    }
+
     if (data.action === "checkin") {
       return handleCheckinPost(sheet, data);
     }
 
-    // RUTA 2: Nueva confirmación de asistencia (RSVP)
+    // RUTA POR DEFECTO: Nueva confirmación de asistencia (RSVP)
     var respName = (data.responsibleName || "").trim();
 
-    // =========================================================================
-    // VALIDACIÓN RIGUROSA ANTIDUPLICADOS: Verificar Titular y Acompañantes
-    // =========================================================================
+    // Validación antiduplicados (Titular y Acompañantes)
     var titularDup = findDuplicateGuest(sheet, respName);
     if (titularDup.duplicate) {
       return jsonResponse({
@@ -106,7 +171,7 @@ function doPost(e) {
       }
     }
 
-    // Procesar la imagen del comprobante si viene en Base64
+    // Guardar imagen del comprobante en Drive
     var fileUrl = "No adjuntado";
     if (data.receiptBase64 && data.receiptBase64.indexOf("base64,") !== -1) {
       try {
@@ -116,9 +181,10 @@ function doPost(e) {
       }
     }
 
-    // Generar ID único del Pase QR y URL oficial
+    // Generar ID único, Link para mostrar el QR y Token QR firmado exclusivo del App Validador
     var passId = generateUniquePassId(sheet);
     var passUrl = BASE_PASS_URL + "?id=" + encodeURIComponent(passId);
+    var qrPayload = buildSignedQrPayload(passId);
 
     var safeRespName = sanitizeForSheet(respName);
     var email = sanitizeForSheet((data.email || "").trim());
@@ -139,20 +205,19 @@ function doPost(e) {
       "Confirmado",                                                 // J: Estado
       passId,                                                       // K: ID Pase QR
       passUrl,                                                      // L: Link del Pase
-      ""                                                            // M: Ingreso / Check-in
+      ""                                                            // M: Presencia / Check-in
     ];
 
     sheet.appendRow(titularRow);
     var titularRowIndex = sheet.getLastRow();
 
-    // Formato estándar con el nombre y apellido en negrito (bold) y color #4a5d4e
     var titularRange = sheet.getRange(titularRowIndex, 1, 1, titularRow.length);
     titularRange.setFontFamily("Arial");
     titularRange.setFontWeight("normal");
     sheet.getRange(titularRowIndex, 1).setFontWeight("bold").setFontColor("#4a5d4e");
     sheet.getRange(titularRowIndex, 11).setFontWeight("bold").setFontColor("#4a5d4e").setHorizontalAlignment("center");
 
-    // 2. FILAS DEBAJO DEL RESPONSABLE: Acompañantes con flecha
+    // 2. FILAS DE ACOMPAÑANTES DEBAJO DEL RESPONSABLE
     if (Array.isArray(data.guests)) {
       for (var i = 1; i < data.guests.length; i++) {
         var guest = data.guests[i];
@@ -184,12 +249,12 @@ function doPost(e) {
       }
     }
 
-    // 3. ENVÍO AUTOMÁTICO DE EMAIL DE CONFIRMACIÓN CON PASE QR (si dejó correo)
+    // 3. ENVÍO AUTOMÁTICO DE E-MAIL CON QR Y LINK (si ingresó correo)
     var emailSent = false;
     var emailError = "";
     if (email && email.indexOf("@") !== -1) {
       try {
-        sendConfirmationEmail(email, respName, data, passId, passUrl);
+        sendConfirmationEmail(email, respName, data, passId, passUrl, qrPayload);
         emailSent = true;
       } catch (mailErr) {
         emailError = mailErr.toString();
@@ -202,6 +267,7 @@ function doPost(e) {
       message: "¡Invitados registrados con éxito!",
       passId: passId,
       passUrl: passUrl,
+      qrPayload: qrPayload,
       emailSent: emailSent,
       emailError: emailError,
       row: titularRowIndex,
@@ -219,9 +285,9 @@ function doPost(e) {
 }
 
 /**
- * Registra o revierte el ingreso en la puerta validando el PIN de portería
+ * Inicio de sesión único para el App Validador de Portería
  */
-function handleCheckinPost(sheet, data) {
+function handleReceptionLogin(sheet, data) {
   var pin = (data.pin || "").toString().trim();
   if (pin !== RECEPTION_PIN) {
     return jsonResponse({
@@ -230,12 +296,102 @@ function handleCheckinPost(sheet, data) {
     });
   }
 
-  var passId = (data.passId || "").toString().trim().toUpperCase();
-  if (!passId) {
+  var existing = getActiveReceptionSession();
+  var clientToken = (data.existingToken || "").toString().trim();
+  var forceTakeover = Boolean(data.forceTakeover);
+
+  if (existing && existing.token) {
+    if (clientToken === existing.token) {
+      // Mismo dispositivo reconectándose
+      return jsonResponse({
+        status: "success",
+        sessionToken: existing.token,
+        passes: getAllPasses(sheet),
+        deviceLabel: existing.deviceLabel
+      });
+    }
+
+    if (!forceTakeover) {
+      return jsonResponse({
+        status: "session_locked",
+        message: "Ya hay otro dispositivo conectado validando en la puerta (" + (existing.deviceLabel || "Recepción") + " desde las " + existing.loggedAt + "). Solo una persona puede validar por vez."
+      });
+    }
+  }
+
+  var newToken = Utilities.getUuid();
+  var nowStr = Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "HH:mm 'hs' (dd/MM)");
+  var sessionObj = {
+    token: newToken,
+    deviceLabel: (data.deviceLabel || "Recepción").toString().slice(0, 60),
+    loggedAt: nowStr
+  };
+  setActiveReceptionSession(sessionObj);
+
+  return jsonResponse({
+    status: "success",
+    sessionToken: newToken,
+    passes: getAllPasses(sheet),
+    deviceLabel: sessionObj.deviceLabel
+  });
+}
+
+/**
+ * Cierra la sesión activa del dispositivo de portería
+ */
+function handleReceptionLogout(data) {
+  var pin = (data.pin || "").toString().trim();
+  var token = (data.sessionToken || "").toString().trim();
+  if (pin !== RECEPTION_PIN) {
+    return jsonResponse({ status: "unauthorized" });
+  }
+  var existing = getActiveReceptionSession();
+  if (!existing || existing.token === token) {
+    clearActiveReceptionSession();
+  }
+  return jsonResponse({ status: "success" });
+}
+
+/**
+ * Valida la sesión activa del recepcionista
+ */
+function isValidReceptionSession(pin, token) {
+  if (pin !== RECEPTION_PIN) return { ok: false, reason: "unauthorized" };
+  var existing = getActiveReceptionSession();
+  if (existing && existing.token && existing.token !== token) {
+    return { ok: false, reason: "session_revoked" };
+  }
+  return { ok: true };
+}
+
+/**
+ * Registra automáticamente como "Presente" en el Excel/Google Sheets cuando el App Validador escanea el QR
+ */
+function handleCheckinPost(sheet, data) {
+  var pin = (data.pin || "").toString().trim();
+  var sessionToken = (data.sessionToken || "").toString().trim();
+  var auth = isValidReceptionSession(pin, sessionToken);
+
+  if (!auth.ok) {
     return jsonResponse({
-      status: "error",
-      message: "Falta el código del pase QR."
+      status: auth.reason,
+      message: auth.reason === "session_revoked"
+        ? "Tu sesión fue cerrada porque otro dispositivo asumió la portería."
+        : "PIN de portería incorrecto."
     });
+  }
+
+  var qrCheck = verifySignedQrPayload(data.qrRaw || data.passId);
+  if (!qrCheck.valid) {
+    return jsonResponse({
+      status: "invalid_qr",
+      message: "Código QR inválido o adulterado."
+    });
+  }
+
+  var passId = qrCheck.passId;
+  if (!passId) {
+    return jsonResponse({ status: "error", message: "Falta el código del pase QR." });
   }
 
   var lastRow = sheet.getLastRow();
@@ -265,14 +421,14 @@ function handleCheckinPost(sheet, data) {
   var sheetRowNumber = foundIndex0 + 2;
   var checkInCell = sheet.getRange(sheetRowNumber, 13);
 
-  // Permitir deshacer check-in desde portería si se solicita explícitamente
+  // Revertir presencia si se escaneó por error
   if (data.undo === true) {
     checkInCell.setValue("").setBackground(null).setFontColor("#2B2F2C").setFontWeight("normal");
     passObj.checkIn = "";
     passObj.checkedIn = false;
     return jsonResponse({
       status: "success",
-      message: "Ingreso revertido correctamente.",
+      message: "Presencia revertida correctamente.",
       pass: passObj
     });
   }
@@ -280,13 +436,13 @@ function handleCheckinPost(sheet, data) {
   if (passObj.checkedIn) {
     return jsonResponse({
       status: "already_checked_in",
-      message: "Este pase ya registró ingreso (" + passObj.checkIn + ").",
+      message: "Este pase ya registró presencia (" + passObj.checkIn + ").",
       pass: passObj
     });
   }
 
   var timestamp = Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "HH:mm 'hs' (dd/MM)");
-  var checkInLabel = "Ingresado - " + timestamp;
+  var checkInLabel = "Presente - " + timestamp;
 
   checkInCell
     .setValue(checkInLabel)
@@ -300,16 +456,13 @@ function handleCheckinPost(sheet, data) {
 
   return jsonResponse({
     status: "success",
-    message: "¡Ingreso confirmado para " + passObj.titularName + "!",
+    message: "¡Presente registrado para " + passObj.titularName + "!",
     pass: passObj
   });
 }
 
 /**
- * Consultas vía GET:
- * - action=checkName: Verifica duplicado por Nombre y Apellido.
- * - action=getPass: Devuelve los datos públicos de un Pase QR específico (Nombre, Acompañantes, Estado).
- * - action=getReceptionList: Devuelve toda la lista de pases para la Portería (requiere PIN correcto).
+ * Consultas vía GET
  */
 function doGet(e) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -329,18 +482,16 @@ function doGet(e) {
     }
 
     var lastRow = sheet.getLastRow();
-    if (lastRow < 2) {
-      return jsonResponse({ found: false, message: "Aún no hay invitados registrados." });
-    }
-
-    var allValues = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
-    for (var i = 0; i < allValues.length; i++) {
-      var rowPassId = (allValues[i][10] || "").toString().trim().toUpperCase();
-      if (rowPassId === passId) {
-        return jsonResponse({
-          found: true,
-          pass: collectPassGroup(allValues, i)
-        });
+    if (lastRow >= 2) {
+      var allValues = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
+      for (var i = 0; i < allValues.length; i++) {
+        var rowPassId = (allValues[i][10] || "").toString().trim().toUpperCase();
+        if (rowPassId === passId) {
+          return jsonResponse({
+            found: true,
+            pass: collectPassGroup(allValues, i)
+          });
+        }
       }
     }
 
@@ -350,6 +501,7 @@ function doGet(e) {
         pass: {
           id: "FM-PRUEBA",
           passUrl: BASE_PASS_URL + "?id=FM-PRUEBA",
+          qrPayload: buildSignedQrPayload("FM-PRUEBA"),
           titularName: "Invitado de Prueba",
           companions: [{ name: "Acompañante de Prueba", isChild: false }],
           totalGuests: 2,
@@ -371,10 +523,15 @@ function doGet(e) {
   if (action === "getReceptionList") {
     ensureHeaders(sheet);
     var pin = (e.parameter.pin || "").toString().trim();
-    if (pin !== RECEPTION_PIN) {
+    var token = (e.parameter.sessionToken || "").toString().trim();
+    var auth = isValidReceptionSession(pin, token);
+
+    if (!auth.ok) {
       return jsonResponse({
-        status: "unauthorized",
-        message: "PIN de portería incorrecto."
+        status: auth.reason,
+        message: auth.reason === "session_revoked"
+          ? "Tu sesión fue cerrada porque otro dispositivo asumió la portería."
+          : "PIN de portería incorrecto."
       });
     }
 
@@ -408,15 +565,15 @@ function doGet(e) {
 
   return jsonResponse({
     status: "online",
-    service: "Boda Flor y Max - Sistema de Confirmación, QR y Portería",
-    version: "5.0",
-    features: ["strict_duplicate_check", "qr_pass_generation", "email_with_qr", "reception_checkin"],
+    service: "Boda Flor y Max - Sistema de Confirmación, QR Exclusivo y Portería",
+    version: "5.1",
+    features: ["strict_duplicate_check", "signed_app_qr", "single_device_reception", "email_with_qr", "auto_checkin"],
     timestamp: new Date().toISOString()
   });
 }
 
 /**
- * Agrupa un titular (índice base 0 dentro de allValues) junto con sus acompañantes consecutivos (↳)
+ * Agrupa un titular junto con sus acompañantes (↳)
  */
 function collectPassGroup(allValues, titularIdx0) {
   var row = allValues[titularIdx0];
@@ -425,7 +582,7 @@ function collectPassGroup(allValues, titularIdx0) {
   var adults = parseInt(row[4], 10) || 1;
   var children = parseInt(row[5], 10) || 0;
   var status = (row[9] || "Confirmado").toString().trim();
-  var passId = (row[10] || "").toString().trim();
+  var passId = (row[10] || "").toString().trim().toUpperCase();
   var passUrl = (row[11] || "").toString().trim();
   var checkIn = (row[12] || "").toString().trim();
 
@@ -443,7 +600,6 @@ function collectPassGroup(allValues, titularIdx0) {
     });
   }
 
-  // Asegurar coherencia numérica si hubo ediciones manuales en la planilla
   if (totalGuests < 1 + companions.length) {
     totalGuests = 1 + companions.length;
   }
@@ -451,6 +607,7 @@ function collectPassGroup(allValues, titularIdx0) {
   return {
     id: passId,
     passUrl: passUrl || (passId ? BASE_PASS_URL + "?id=" + encodeURIComponent(passId) : ""),
+    qrPayload: passId ? buildSignedQrPayload(passId) : "",
     titularName: titularName,
     companions: companions,
     totalGuests: totalGuests,
@@ -458,13 +615,10 @@ function collectPassGroup(allValues, titularIdx0) {
     children: children,
     status: status,
     checkIn: checkIn,
-    checkedIn: checkIn.indexOf("Ingresado") !== -1
+    checkedIn: checkIn.indexOf("Presente") !== -1 || checkIn.indexOf("Ingresado") !== -1
   };
 }
 
-/**
- * Obtiene todos los grupos confirmados de la planilla
- */
 function getAllPasses(sheet) {
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
@@ -476,8 +630,7 @@ function getAllPasses(sheet) {
     var rawName = (allValues[i][0] || "").toString().trim();
     if (!rawName || rawName.indexOf("↳") !== -1) continue;
 
-    // Si una fila confirmada previamente aún no tiene ID de pase, lo asignamos automáticamente
-    var currentPassId = (allValues[i][10] || "").toString().trim();
+    var currentPassId = (allValues[i][10] || "").toString().trim().toUpperCase();
     if (!currentPassId || currentPassId === "-") {
       currentPassId = generateUniquePassIdFromValues(allValues);
       var generatedUrl = BASE_PASS_URL + "?id=" + encodeURIComponent(currentPassId);
@@ -493,9 +646,6 @@ function getAllPasses(sheet) {
   return passes;
 }
 
-/**
- * Genera un código único corto estilo FM-8F2A9C verificando que no exista en la hoja
- */
 function generateUniquePassId(sheet) {
   var lastRow = sheet.getLastRow();
   var existingValues = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 13).getValues() : [];
@@ -521,9 +671,6 @@ function generateUniquePassIdFromValues(existingValues) {
   return "FM-" + new Date().getTime().toString(36).toUpperCase().slice(-6);
 }
 
-/**
- * Busca si un Nombre y Apellido completo ya existe en la planilla.
- */
 function findDuplicateGuest(sheet, fullName) {
   if (!fullName) return { duplicate: false };
 
@@ -579,20 +726,19 @@ function cleanCleanName(str) {
 }
 
 /**
- * Descarga la imagen PNG del código QR para incrustarla en el correo electrónico
+ * Descarga la imagen PNG del código QR (conteniendo el token firmado exclusivo para el App Validador)
  */
-function fetchQrBlob(passUrl, passId) {
+function fetchQrBlob(qrContent, passId) {
   var urls = [
-    "https://quickchart.io/qr?size=320&margin=2&ecLevel=M&text=" + encodeURIComponent(passUrl),
-    "https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=" + encodeURIComponent(passUrl)
+    "https://quickchart.io/qr?size=320&margin=2&ecLevel=M&text=" + encodeURIComponent(qrContent),
+    "https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=" + encodeURIComponent(qrContent)
   ];
 
   for (var i = 0; i < urls.length; i++) {
     try {
       var res = UrlFetchApp.fetch(urls[i], { muteHttpExceptions: true });
       if (res.getResponseCode() === 200) {
-        var blob = res.getBlob().setName("Pase_QR_" + passId + ".png");
-        return blob;
+        return res.getBlob().setName("Pase_QR_" + passId + ".png");
       }
     } catch (e) {
       Logger.log("Aviso fetchQrBlob (" + urls[i] + "): " + e.toString());
@@ -602,13 +748,14 @@ function fetchQrBlob(passUrl, passId) {
 }
 
 /**
- * Envía un correo electrónico con diseño elegante de boda y Pase QR embutido al invitado
+ * Envía el e-mail de confirmación con el QR exclusivo de recepción embutido + link al pase
  */
-function sendConfirmationEmail(recipientEmail, guestName, data, passId, passUrl) {
+function sendConfirmationEmail(recipientEmail, guestName, data, passId, passUrl, qrPayload) {
   var subject = "¡Tu Pase QR y Confirmación! Boda Flor & Max 👰🤵";
   var safeGuestName = escapeHtml(guestName);
   var safePassId = escapeHtml(passId || "");
   var safePassUrl = passUrl || BASE_PASS_URL;
+  var qrContent = qrPayload || buildSignedQrPayload(passId);
 
   var guestListHtml = "";
   if (Array.isArray(data.guests)) {
@@ -620,10 +767,10 @@ function sendConfirmationEmail(recipientEmail, guestName, data, passId, passUrl)
     guestListHtml = "<li>" + safeGuestName + "</li>";
   }
 
-  var qrBlob = fetchQrBlob(safePassUrl, safePassId);
+  var qrBlob = fetchQrBlob(qrContent, safePassId);
   var qrImageSrc = qrBlob
     ? "cid:qrCode"
-    : "https://quickchart.io/qr?size=280&margin=2&text=" + encodeURIComponent(safePassUrl);
+    : "https://quickchart.io/qr?size=280&margin=2&text=" + encodeURIComponent(qrContent);
 
   var htmlBody = "" +
   "<div style='background-color: #FAF8F5; padding: 30px 15px; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; color: #2B2F2C; line-height: 1.6;'>" +
@@ -643,15 +790,14 @@ function sendConfirmationEmail(recipientEmail, guestName, data, passId, passUrl)
           "¡Qué alegría enorme nos da saber que vas a estar con nosotros! Tu reserva y la de tus acompañantes ya quedaron <strong>confirmadas con éxito</strong>." +
         "</p>" +
 
-        // Bloque destacado con el Código QR para la puerta
         "<div style='background: #FFFDF9; border: 2px solid #C5A059; border-radius: 16px; padding: 22px 16px; margin: 22px 0; text-align: center;'>" +
-          "<div style='font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.14em; color: #9F7932; margin-bottom: 6px;'>Tu Pase de Ingreso para la Fiesta</div>" +
-          "<p style='font-size: 13px; color: #555; margin: 0 0 14px 0;'>Presentá este código QR en la puerta el día de la boda:</p>" +
+          "<div style='font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.14em; color: #9F7932; margin-bottom: 6px;'>Tu Pase QR de Ingreso</div>" +
+          "<p style='font-size: 13px; color: #555; margin: 0 0 14px 0;'>Presentá este código QR en la recepción al llegar al salón:</p>" +
           "<img src='" + qrImageSrc + "' alt='Pase QR " + safePassId + "' style='width: 210px; height: 210px; border-radius: 10px; border: 4px solid #FFFFFF; box-shadow: 0 4px 14px rgba(0,0,0,0.08); display: block; margin: 0 auto;'>" +
           "<div style='margin-top: 12px; font-size: 15px; font-weight: bold; letter-spacing: 0.12em; color: #4B5842;'>" + safePassId + "</div>" +
           "<div style='margin-top: 14px;'>" +
             "<a href='" + safePassUrl + "' target='_blank' style='background: #C5A059; color: #FFFFFF; padding: 10px 20px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 13px; display: inline-block;'>" +
-              "🎫 Ver Pase Digital Online" +
+              "🎫 Abrir Link de mi Pase QR" +
             "</a>" +
           "</div>" +
         "</div>" +
@@ -735,9 +881,7 @@ function sendConfirmationEmail(recipientEmail, guestName, data, passId, passUrl)
 }
 
 /**
- * FUNCIÓN PARA EJECUTAR UNA VEZ DESDE EL EDITOR O MENÚ:
- * 1) Fuerza a Google a pedir las autorizaciones de MailApp y UrlFetchApp.
- * 2) Envía un e-mail de prueba al dueño de la planilla con un Pase QR de ejemplo.
+ * Ejecutar una vez desde el editor o menú para autorizar MailApp + UrlFetchApp y enviar un correo de prueba
  */
 function autorizarYProbarEmail() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -756,7 +900,8 @@ function autorizarYProbarEmail() {
   };
 
   var testUrl = BASE_PASS_URL + "?id=FM-PRUEBA";
-  sendConfirmationEmail(ownerEmail, "Invitado de Prueba", testData, "FM-PRUEBA", testUrl);
+  var testQr = buildSignedQrPayload("FM-PRUEBA");
+  sendConfirmationEmail(ownerEmail, "Invitado de Prueba", testData, "FM-PRUEBA", testUrl, testQr);
 
   var msg = "✅ ¡Permisos autorizados y e-mail de prueba enviado!\n\n" +
             "Destinatario: " + ownerEmail + "\n" +
@@ -768,9 +913,6 @@ function autorizarYProbarEmail() {
   } catch (e) {}
 }
 
-/**
- * Genera códigos y links de Pase QR para todos los confirmados anteriores que aún no tienen uno.
- */
 function generarQRsFaltantes() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   ensureHeaders(sheet);
@@ -790,7 +932,6 @@ function generarQRsFaltantes() {
 
     var sheetRow = i + 2;
     if (rawName.indexOf("↳") !== -1) {
-      // Fila de acompañante: asegurar guiones en K..M si están vacíos
       if (!allValues[i][10]) sheet.getRange(sheetRow, 11).setValue("-");
       if (!allValues[i][11]) sheet.getRange(sheetRow, 12).setValue("-");
       if (!allValues[i][12]) sheet.getRange(sheetRow, 13).setValue("-");
@@ -820,9 +961,6 @@ function generarQRsFaltantes() {
   } catch (e) {}
 }
 
-/**
- * Muestra un resumen rápido de invitados confirmados vs ingresados en portería
- */
 function mostrarResumenPorteria() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   ensureHeaders(sheet);
@@ -843,8 +981,8 @@ function mostrarResumenPorteria() {
   var msg = "📊 RESUMEN DE INVITADOS Y PORTERÍA\n\n" +
             "• Grupos confirmados: " + passes.length + "\n" +
             "• Total de personas confirmadas: " + totalPeople + "\n" +
-            "• Grupos que ya ingresaron: " + checkedGroups + "\n" +
-            "• Personas que ya ingresaron: " + checkedPeople + " / " + totalPeople;
+            "• Grupos presentes: " + checkedGroups + "\n" +
+            "• Personas presentes: " + checkedPeople + " / " + totalPeople;
 
   try {
     SpreadsheetApp.getUi().alert(msg);
@@ -853,9 +991,6 @@ function mostrarResumenPorteria() {
   }
 }
 
-/**
- * Guarda el archivo del comprobante en Google Drive
- */
 function saveReceiptToDrive(base64Data, guestName) {
   var folderName = "Comprobantes Boda Flor y Max";
   var folders = DriveApp.getFoldersByName(folderName);
@@ -884,9 +1019,6 @@ function saveReceiptToDrive(base64Data, guestName) {
   return file.getUrl();
 }
 
-/**
- * Asegura los encabezados limpios (Columnas A a M) sin borrar datos existentes
- */
 function ensureHeaders(sheet) {
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(SHEET_HEADERS);
@@ -902,8 +1034,8 @@ function ensureHeaders(sheet) {
   }
 
   var firstCell = sheet.getRange(1, 1).getValue().toString();
-  var eleventhCell = sheet.getRange(1, 11).getValue().toString();
-  if (firstCell.indexOf("Fecha") !== -1 || firstCell.indexOf("Responsable") !== -1 || firstCell !== "Invitados" || eleventhCell !== "ID Pase QR") {
+  var thirteenthCell = sheet.getRange(1, 13).getValue().toString();
+  if (firstCell.indexOf("Fecha") !== -1 || firstCell.indexOf("Responsable") !== -1 || firstCell !== "Invitados" || thirteenthCell !== "Presencia / Check-in") {
     sheet.getRange(1, 1, 1, SHEET_HEADERS.length).setValues([SHEET_HEADERS]);
     formatHeaderRow(sheet, SHEET_HEADERS.length);
   }
@@ -918,19 +1050,19 @@ function formatHeaderRow(sheet, numColumns) {
   headerRange.setHorizontalAlignment("center");
   sheet.setFrozenRows(1);
 
-  sheet.setColumnWidth(1, 280);  // A: Invitados
-  sheet.setColumnWidth(2, 160);  // B: Teléfono / WhatsApp
-  sheet.setColumnWidth(3, 200);  // C: Email
-  sheet.setColumnWidth(4, 110);  // D: Total Personas
-  sheet.setColumnWidth(5, 110);  // E: Mayores de 3
-  sheet.setColumnWidth(6, 110);  // F: Menores de 3
-  sheet.setColumnWidth(7, 130);  // G: Monto Total ($)
-  sheet.setColumnWidth(8, 240);  // H: Comprobante
-  sheet.setColumnWidth(9, 200);  // I: Notas
-  sheet.setColumnWidth(10, 150); // J: Estado
-  sheet.setColumnWidth(11, 130); // K: ID Pase QR
-  sheet.setColumnWidth(12, 260); // L: Link del Pase
-  sheet.setColumnWidth(13, 190); // M: Ingreso / Check-in
+  sheet.setColumnWidth(1, 280);
+  sheet.setColumnWidth(2, 160);
+  sheet.setColumnWidth(3, 200);
+  sheet.setColumnWidth(4, 110);
+  sheet.setColumnWidth(5, 110);
+  sheet.setColumnWidth(6, 110);
+  sheet.setColumnWidth(7, 130);
+  sheet.setColumnWidth(8, 240);
+  sheet.setColumnWidth(9, 200);
+  sheet.setColumnWidth(10, 150);
+  sheet.setColumnWidth(11, 130);
+  sheet.setColumnWidth(12, 260);
+  sheet.setColumnWidth(13, 190);
 }
 
 function jsonResponse(obj) {

@@ -507,6 +507,7 @@ async function handleFormSubmit(e) {
     if (serverResult && serverResult.status === 'success') {
       payload.passId = serverResult.passId || null;
       payload.passUrl = serverResult.passUrl || (payload.passId && window.PassUtils ? window.PassUtils.buildPassUrl(payload.passId) : null);
+      payload.qrPayload = serverResult.qrPayload || payload.passId || null;
       payload.emailSent = Boolean(serverResult.emailSent);
       payload.emailError = serverResult.emailError || '';
     }
@@ -565,10 +566,11 @@ function showSuccessScreen(data) {
   let finalPassUrl = data.passUrl || '';
   if (data.passId && window.PassUtils) {
     finalPassUrl = finalPassUrl || window.PassUtils.buildPassUrl(data.passId);
+    const qrContent = data.qrPayload || data.passId;
     if (qrCard) qrCard.style.display = 'block';
     if (passBadge) passBadge.innerText = data.passId;
     if (qrCanvas) {
-      window.PassUtils.renderQrToCanvas(qrCanvas, finalPassUrl, 210);
+      window.PassUtils.renderQrToCanvas(qrCanvas, qrContent, 210);
     }
     if (btnOpenPassLink) {
       btnOpenPassLink.href = finalPassUrl;
@@ -577,6 +579,7 @@ function showSuccessScreen(data) {
       const passObjForPng = {
         id: data.passId,
         passUrl: finalPassUrl,
+        qrPayload: qrContent,
         titularName: data.responsibleName,
         companions: data.guests.slice(1),
         totalGuests: data.totalGuestsCount

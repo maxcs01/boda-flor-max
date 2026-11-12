@@ -28,11 +28,43 @@
   }
 
   /**
-   * Extrae el código de pase (ej: FM-8F2A9C) desde una URL escaneada o texto directo
+   * Analiza el texto escaneado por la cámara del App Validador.
+   * Reconoce el formato exclusivo BODA-FM|<ID>|<FIRMA> o un código manual FM-XXXXXX.
+   */
+  function parseScannedQr(rawText) {
+    if (!rawText) return { isOfficialToken: false, passId: '', qrRaw: '' };
+    const text = String(rawText).trim();
+
+    if (text.toUpperCase().indexOf('BODA-FM|') === 0) {
+      const parts = text.split('|');
+      if (parts.length === 3 && parts[1]) {
+        return {
+          isOfficialToken: true,
+          passId: parts[1].trim().toUpperCase(),
+          qrRaw: text.toUpperCase()
+        };
+      }
+    }
+
+    const extracted = extractPassIdFromScan(text);
+    return {
+      isOfficialToken: false,
+      passId: extracted,
+      qrRaw: ''
+    };
+  }
+
+  /**
+   * Extrae el código de pase (ej: FM-8F2A9C) desde texto o código ingresado manualmente
    */
   function extractPassIdFromScan(rawText) {
     if (!rawText) return '';
     const text = String(rawText).trim();
+
+    if (text.toUpperCase().indexOf('BODA-FM|') === 0) {
+      const parts = text.split('|');
+      if (parts[1]) return parts[1].trim().toUpperCase();
+    }
 
     try {
       if (text.indexOf('http') === 0 || text.indexOf('pase.html') !== -1) {
@@ -99,13 +131,13 @@
   function downloadPassCardPng(passData) {
     if (!passData || !passData.id) return;
 
-    const passUrl = passData.passUrl || buildPassUrl(passData.id);
+    const qrContent = passData.qrPayload || passData.id;
     const companions = Array.isArray(passData.companions) ? passData.companions : [];
     const totalGuests = passData.totalGuests || (1 + companions.length);
 
-    // Canvas temporal para el QR
+    // Canvas temporal para el QR (contiene token exclusivo de recepción, sin URL pública)
     const qrCanvas = document.createElement('canvas');
-    renderQrToCanvas(qrCanvas, passUrl, 320);
+    renderQrToCanvas(qrCanvas, qrContent, 320);
 
     const W = 720;
     const card = document.createElement('canvas');
@@ -260,6 +292,7 @@
   global.PassUtils = {
     escapeHtml,
     buildPassUrl,
+    parseScannedQr,
     extractPassIdFromScan,
     renderQrToCanvas,
     downloadPassCardPng,
