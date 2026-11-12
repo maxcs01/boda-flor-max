@@ -48,27 +48,27 @@ Planilha oficial: 👉 [Abrir Google Sheets](https://docs.google.com/spreadsheet
 
 ---
 
-### 🎫 Passo 4: Gerar QRs para Quem Já Confirmou Antes
+### 🎫 Passo 4: Gerar QRs e Enviar E-mails para Quem Já Confirmou Antes
 1. Volte para a aba da sua planilha no Google Sheets e **recarregue a página (F5)**.
-2. Aparecerá um novo menu no topo chamado **`💌 Boda Flor & Max`**.
-3. Clique em **`💌 Boda Flor & Max`** > **`🎫 Generar QRs para Confirmados Existentes`**.
-4. Todas as confirmações antigas ganharão automaticamente seu código na Coluna K e o link na Coluna L (que você pode copiar e enviar pelo WhatsApp se desejar!).
+2. Aparecerá o menu **`💌 Boda Flor & Max`** no topo da planilha.
+3. Clique em **`💌 Boda Flor & Max`** > **`📧 Enviar E-mail con QR a Confirmados Pendientes`**.
+4. Isso gera os Pases QR que ainda faltarem (Colunas K e L) e dispara automaticamente o e-mail com o QR para **todos os convidados já registrados** que deixaram e-mail na Coluna C (marcando o status na **Coluna N `Estado E-mail`** para nunca enviar repetido!).
 
 ---
 
-### 🔤 Passo 5: Atualizar a Aba `Lista Alfabética` (Colunas A até M)
-Se você já criou a aba espelho **`Lista Alfabética`** que ordena os titulares de A a Z com os acompanhantes logo abaixo, atualize a fórmula da célula **`A1`** para incluir as novas colunas `K`, `L` e `M`:
+### 🔤 Passo 5: Atualizar a Aba `Lista Alfabética` (Colunas A até N)
+Se você já criou a aba espelho **`Lista Alfabética`** que ordena os titulares de A a Z com os acompanhantes logo abaixo, atualize a fórmula da célula **`A1`** para incluir as colunas `K` até `N`:
 
 ```excel
 =LET(
-  dados; FILTER('Hoja 1'!A2:M; 'Hoja 1'!A2:A<>"");
+  dados; FILTER('Hoja 1'!A2:N; 'Hoja 1'!A2:A<>"");
   nomes; CHOOSECOLS(dados; 1);
   posOriginal; SEQUENCE(ROWS(dados));
   grupoTitular; SCAN(""; nomes; LAMBDA(prev; curr; IF(ISNUMBER(SEARCH("↳"; curr)); prev; curr)));
   tabelaCompleta; HSTACK(grupoTitular; posOriginal; dados);
   tabelaOrdenada; SORT(tabelaCompleta; 1; VERDADERO; 2; VERDADERO);
   resultado; CHOOSECOLS(tabelaOrdenada; SEQUENCE(COLUMNS(dados); 1; 3));
-  VSTACK('Hoja 1'!A1:M1; resultado)
+  VSTACK('Hoja 1'!A1:N1; resultado)
 )
 ```
 *(Se a sua planilha usar vírgula em vez de ponto e vírgula, troque `;` por `,` e `VERDADERO` por `TRUE`. Se a aba original tiver outro nome, substitua `'Hoja 1'` pelo nome exato da aba).*

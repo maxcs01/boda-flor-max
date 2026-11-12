@@ -612,22 +612,10 @@ function showSuccessScreen(data) {
     }
   }
 
-  let msg = `¡Hola Flor y Max! Acabamos de confirmar nuestra asistencia a su casamiento ✨👰🤵\n\n`;
-  msg += `👤 *Nombre:* ${data.responsibleName}\n`;
-  msg += `📱 *Teléfono:* ${data.phone}\n`;
-  msg += `👥 *Total Asistentes:* ${data.totalGuestsCount} (${data.adultsCount} mayores, ${data.childrenCount} menores de 3 años)\n`;
-  msg += `📋 *Invitados:* \n`;
-  data.guests.forEach((g, idx) => {
-    msg += `  ${idx + 1}. ${g.name} ${g.isChild ? '(Menor de 3 años)' : ''}\n`;
-  });
-  msg += `💰 *Total tarjeta:* ${data.totalAmountFormatted} (Alias: bodaflor.max)\n`;
-  if (data.passId && finalPassUrl) {
-    msg += `🎫 *Pase QR (${data.passId}):* ${finalPassUrl}\n`;
+  let msg = `¡Hola Flor y Max! Acabamos de confirmar nuestra asistencia a su casamiento ✨👰🤵`;
+  if (finalPassUrl) {
+    msg += `\n\n🎫 *Pase QR:* ${finalPassUrl}`;
   }
-  if (data.notes) {
-    msg += `💌 *Mensaje:* "${data.notes}"\n`;
-  }
-  msg += `\n¡Estamos muy felices de acompañarlos en su gran día! 🎉❤️`;
 
   const isMax = data.recipient === 'max';
   const targetPhone = isMax ? '5493415971696' : '5493413404899';

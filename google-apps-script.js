@@ -27,7 +27,8 @@ var SHEET_HEADERS = [
   "Estado",
   "ID Pase QR",
   "Link del Pase",
-  "Presencia / Check-in"
+  "Presencia / Check-in",
+  "Estado E-mail"
 ];
 
 /**
@@ -38,6 +39,7 @@ function onOpen() {
     SpreadsheetApp.getUi()
       .createMenu("💌 Boda Flor & Max")
       .addItem("✅ Autorizar y Probar Envío de E-mail", "autorizarYProbarEmail")
+      .addItem("📧 Enviar E-mail con QR a Confirmados Pendientes", "enviarEmailsATodosLosConfirmados")
       .addItem("🎫 Generar QRs para Confirmados Existentes", "generarQRsFaltantes")
       .addItem("🔓 Liberar Dispositivo Activo de Portería", "liberarSesionPorteriaManual")
       .addItem("📊 Ver Resumen de Presencia (Portería)", "mostrarResumenPorteria")
@@ -187,7 +189,8 @@ function doPost(e) {
     var qrPayload = buildSignedQrPayload(passId);
 
     var safeRespName = sanitizeForSheet(respName);
-    var email = sanitizeForSheet((data.email || "").trim());
+    var cleanEmail = (data.email || "").toString().trim().replace(/\s+/g, "");
+    var email = sanitizeForSheet(cleanEmail);
     var phone = sanitizeForSheet((data.phone || "").trim());
     var notes = sanitizeForSheet((data.notes || "").trim());
 
@@ -205,7 +208,8 @@ function doPost(e) {
       "Confirmado",                                                 // J: Estado
       passId,                                                       // K: ID Pase QR
       passUrl,                                                      // L: Link del Pase
-      ""                                                            // M: Presencia / Check-in
+      "",                                                           // M: Presencia / Check-in
+      ""                                                            // N: Estado E-mail
     ];
 
     sheet.appendRow(titularRow);
@@ -237,6 +241,7 @@ function doPost(e) {
           "Acompañante de " + safeRespName,
           "-",
           "-",
+          "-",
           "-"
         ];
 
@@ -249,17 +254,24 @@ function doPost(e) {
       }
     }
 
-    // 3. ENVÍO AUTOMÁTICO DE E-MAIL CON QR Y LINK (si ingresó correo)
+    // 3. ENVÍO AUTOMÁTICO DE E-MAIL CON QR Y LINK (y registro de estado en Columna N)
     var emailSent = false;
     var emailError = "";
-    if (email && email.indexOf("@") !== -1) {
+    var emailStatusCell = sheet.getRange(titularRowIndex, 14);
+    var mailTime = Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "HH:mm (dd/MM)");
+
+    if (cleanEmail && cleanEmail.indexOf("@") !== -1) {
       try {
-        sendConfirmationEmail(email, respName, data, passId, passUrl, qrPayload);
+        sendConfirmationEmail(cleanEmail, respName, data, passId, passUrl, qrPayload);
         emailSent = true;
+        emailStatusCell.setValue("✅ Enviado - " + mailTime).setBackground("#E8F5E9").setFontColor("#2E7D32");
       } catch (mailErr) {
         emailError = mailErr.toString();
         Logger.log("Error al enviar email: " + emailError);
+        emailStatusCell.setValue("❌ Error: " + emailError.slice(0, 120)).setBackground("#FDF2F2").setFontColor("#C62828");
       }
+    } else {
+      emailStatusCell.setValue("Sin correo").setFontColor("#777777");
     }
 
     return jsonResponse({
@@ -566,8 +578,8 @@ function doGet(e) {
   return jsonResponse({
     status: "online",
     service: "Boda Flor y Max - Sistema de Confirmación, QR Exclusivo y Portería",
-    version: "5.1",
-    features: ["strict_duplicate_check", "signed_app_qr", "single_device_reception", "email_with_qr", "auto_checkin"],
+    version: "5.2",
+    features: ["strict_duplicate_check", "signed_app_qr", "single_device_reception", "email_with_qr", "batch_email_sender", "auto_checkin"],
     timestamp: new Date().toISOString()
   });
 }
@@ -865,8 +877,9 @@ function sendConfirmationEmail(recipientEmail, guestName, data, passId, passUrl,
     "</div>" +
   "</div>";
 
+  var cleanRecipient = (recipientEmail || "").toString().trim().replace(/\s+/g, "").replace(/,+$/, "");
   var emailOptions = {
-    to: recipientEmail,
+    to: cleanRecipient,
     subject: subject,
     name: "Boda Flor & Max",
     htmlBody: htmlBody
@@ -877,7 +890,23 @@ function sendConfirmationEmail(recipientEmail, guestName, data, passId, passUrl,
     emailOptions.attachments = [qrBlob];
   }
 
-  MailApp.sendEmail(emailOptions);
+  try {
+    MailApp.sendEmail(emailOptions);
+  } catch (sendErr) {
+    // Reintento limpio sin adjuntos/cid por si algún filtro bloqueó el blob
+    if (qrBlob) {
+      var fallbackUrl = "https://quickchart.io/qr?size=280&margin=2&text=" + encodeURIComponent(qrContent);
+      var fallbackHtml = htmlBody.replace("cid:qrCode", fallbackUrl);
+      MailApp.sendEmail({
+        to: cleanRecipient,
+        subject: subject,
+        name: "Boda Flor & Max",
+        htmlBody: fallbackHtml
+      });
+    } else {
+      throw sendErr;
+    }
+  }
 }
 
 /**
@@ -913,6 +942,118 @@ function autorizarYProbarEmail() {
   } catch (e) {}
 }
 
+/**
+ * Envía el e-mail de confirmación con su Pase QR a TODAS las personas ya registradas
+ * que tengan correo en la Columna C y aún no figuren como "Enviado" en la Columna N.
+ */
+function enviarEmailsATodosLosConfirmados() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  ensureHeaders(sheet);
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    try { SpreadsheetApp.getUi().alert("Aún no hay invitados registrados."); } catch (e) {}
+    return;
+  }
+
+  var remainingQuota = MailApp.getRemainingDailyQuota();
+  if (remainingQuota <= 0) {
+    try { SpreadsheetApp.getUi().alert("⚠️ Alcanzaste el límite diario de envíos de Google Gmail hoy (" + remainingQuota + " restantes). Intentá mañana."); } catch (e) {}
+    return;
+  }
+
+  var allValues = sheet.getRange(2, 1, lastRow - 1, 14).getValues();
+  var sentCount = 0;
+  var skippedNoEmail = 0;
+  var skippedAlreadySent = 0;
+  var errorCount = 0;
+  var errorSample = "";
+  var mailTime = Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "HH:mm (dd/MM)");
+
+  for (var i = 0; i < allValues.length; i++) {
+    var rawName = (allValues[i][0] || "").toString().trim();
+    if (!rawName) continue;
+
+    var sheetRow = i + 2;
+    if (rawName.indexOf("↳") !== -1) {
+      if (!allValues[i][13]) sheet.getRange(sheetRow, 14).setValue("-");
+      continue;
+    }
+
+    // Asegurar Pase QR si todavía no tenía
+    var currentId = (allValues[i][10] || "").toString().trim().toUpperCase();
+    if (!currentId || currentId === "-") {
+      currentId = generateUniquePassIdFromValues(allValues);
+      var newUrl = BASE_PASS_URL + "?id=" + encodeURIComponent(currentId);
+      allValues[i][10] = currentId;
+      allValues[i][11] = newUrl;
+      sheet.getRange(sheetRow, 11).setValue(currentId).setFontWeight("bold").setFontColor("#4a5d4e").setHorizontalAlignment("center");
+      sheet.getRange(sheetRow, 12).setValue(newUrl);
+    }
+
+    var emailVal = (allValues[i][2] || "").toString().trim().replace(/\s+/g, "");
+    var emailStatusCell = sheet.getRange(sheetRow, 14);
+    var currentMailStatus = (allValues[i][13] || "").toString().trim();
+
+    if (!emailVal || emailVal.indexOf("@") === -1) {
+      if (!currentMailStatus) {
+        emailStatusCell.setValue("Sin correo").setFontColor("#777777");
+      }
+      skippedNoEmail++;
+      continue;
+    }
+
+    if (currentMailStatus.indexOf("Enviado") !== -1) {
+      skippedAlreadySent++;
+      continue;
+    }
+
+    if (sentCount >= remainingQuota) {
+      errorCount++;
+      errorSample = "Se alcanzó la cuota diaria de envíos de Google.";
+      break;
+    }
+
+    var groupObj = collectPassGroup(allValues, i);
+    var guestsArr = [{ name: groupObj.titularName, isChild: false }];
+    for (var c = 0; c < groupObj.companions.length; c++) {
+      guestsArr.push(groupObj.companions[c]);
+    }
+
+    var emailData = {
+      guests: guestsArr,
+      totalGuestsCount: groupObj.totalGuests,
+      totalAmountFormatted: (allValues[i][6] || "$30.000").toString()
+    };
+
+    try {
+      sendConfirmationEmail(emailVal, groupObj.titularName, emailData, groupObj.id, groupObj.passUrl, groupObj.qrPayload);
+      emailStatusCell.setValue("✅ Enviado - " + mailTime).setBackground("#E8F5E9").setFontColor("#2E7D32");
+      sentCount++;
+      SpreadsheetApp.flush();
+      Utilities.sleep(250);
+    } catch (err) {
+      errorCount++;
+      var errTxt = err.toString();
+      if (!errorSample) errorSample = groupObj.titularName + ": " + errTxt;
+      emailStatusCell.setValue("❌ Error: " + errTxt.slice(0, 120)).setBackground("#FDF2F2").setFontColor("#C62828");
+    }
+  }
+
+  var summary = "📧 RESUMEN DE ENVÍO DE E-MAILS\n\n" +
+                "✅ Enviados ahora: " + sentCount + "\n" +
+                "⏭️ Ya enviados antes: " + skippedAlreadySent + "\n" +
+                "📭 Sin correo en la planilla: " + skippedNoEmail + "\n" +
+                "❌ Errores: " + errorCount +
+                (errorSample ? "\n\nDetalle del error: " + errorSample : "") +
+                "\n\nCuota restante hoy: " + MailApp.getRemainingDailyQuota() + " e-mails.";
+
+  Logger.log(summary);
+  try {
+    SpreadsheetApp.getUi().alert(summary);
+  } catch (e) {}
+}
+
 function generarQRsFaltantes() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   ensureHeaders(sheet);
@@ -923,7 +1064,7 @@ function generarQRsFaltantes() {
     return;
   }
 
-  var allValues = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
+  var allValues = sheet.getRange(2, 1, lastRow - 1, 14).getValues();
   var countGenerated = 0;
 
   for (var i = 0; i < allValues.length; i++) {
@@ -935,6 +1076,7 @@ function generarQRsFaltantes() {
       if (!allValues[i][10]) sheet.getRange(sheetRow, 11).setValue("-");
       if (!allValues[i][11]) sheet.getRange(sheetRow, 12).setValue("-");
       if (!allValues[i][12]) sheet.getRange(sheetRow, 13).setValue("-");
+      if (!allValues[i][13]) sheet.getRange(sheetRow, 14).setValue("-");
       continue;
     }
 
@@ -1034,8 +1176,8 @@ function ensureHeaders(sheet) {
   }
 
   var firstCell = sheet.getRange(1, 1).getValue().toString();
-  var thirteenthCell = sheet.getRange(1, 13).getValue().toString();
-  if (firstCell.indexOf("Fecha") !== -1 || firstCell.indexOf("Responsable") !== -1 || firstCell !== "Invitados" || thirteenthCell !== "Presencia / Check-in") {
+  var fourteenthCell = sheet.getRange(1, 14).getValue().toString();
+  if (firstCell.indexOf("Fecha") !== -1 || firstCell.indexOf("Responsable") !== -1 || firstCell !== "Invitados" || fourteenthCell !== "Estado E-mail") {
     sheet.getRange(1, 1, 1, SHEET_HEADERS.length).setValues([SHEET_HEADERS]);
     formatHeaderRow(sheet, SHEET_HEADERS.length);
   }
@@ -1063,6 +1205,7 @@ function formatHeaderRow(sheet, numColumns) {
   sheet.setColumnWidth(11, 130);
   sheet.setColumnWidth(12, 260);
   sheet.setColumnWidth(13, 190);
+  sheet.setColumnWidth(14, 190);
 }
 
 function jsonResponse(obj) {
