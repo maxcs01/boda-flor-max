@@ -508,6 +508,7 @@ async function handleFormSubmit(e) {
       payload.passId = serverResult.passId || null;
       payload.passUrl = serverResult.passUrl || (payload.passId && window.PassUtils ? window.PassUtils.buildPassUrl(payload.passId) : null);
       payload.qrPayload = serverResult.qrPayload || payload.passId || null;
+      payload.memberPasses = Array.isArray(serverResult.memberPasses) ? serverResult.memberPasses : null;
       payload.emailSent = Boolean(serverResult.emailSent);
       payload.emailError = serverResult.emailError || '';
     }
@@ -562,6 +563,7 @@ function showSuccessScreen(data) {
   const passBadge = document.getElementById('successPassIdBadge');
   const btnDownloadPng = document.getElementById('btnDownloadPassPng');
   const btnOpenPassLink = document.getElementById('btnOpenPassLink');
+  const individualQrsBox = document.getElementById('successIndividualQrsBox');
 
   let finalPassUrl = data.passUrl || '';
   if (data.passId && window.PassUtils) {
@@ -585,6 +587,48 @@ function showSuccessScreen(data) {
         totalGuests: data.totalGuestsCount
       };
       btnDownloadPng.onclick = () => window.PassUtils.downloadPassCardPng(passObjForPng);
+    }
+
+    // Si hay acompañantes con QR propio, mostrar lista para enviar a cada familiar
+    const companionsWithQr = Array.isArray(data.memberPasses)
+      ? data.memberPasses.filter((m) => !m.isTitular && m.id)
+      : [];
+
+    if (individualQrsBox) {
+      if (companionsWithQr.length > 0) {
+        individualQrsBox.style.display = 'block';
+        individualQrsBox.innerHTML = `
+          <div class="individual-qrs-header">
+            <i class="fas fa-users"></i> QRs Individuales para tus acompañantes
+            <span>¿Llegan por separado? Enviá a cada uno su QR personal por WhatsApp:</span>
+          </div>
+          <div class="individual-qrs-list">
+            ${companionsWithQr.map((m) => {
+              const memberUrl = m.passUrl || window.PassUtils.buildPassUrl(m.id);
+              const waUrl = window.PassUtils.buildWhatsAppShareUrl(m.name, memberUrl);
+              return `
+                <div class="individual-qr-row">
+                  <div class="individual-qr-info">
+                    <strong>${escape(m.name)}</strong>
+                    <span class="individual-qr-code">${escape(m.id)}</span>
+                  </div>
+                  <div class="individual-qr-btns">
+                    <a href="${memberUrl}" target="_blank" class="btn-mini-outline" title="Abrir QR">
+                      <i class="fas fa-qrcode"></i> Ver QR
+                    </a>
+                    <a href="${waUrl}" target="_blank" class="btn-share-wa-mini" title="Enviar por WhatsApp">
+                      <i class="fab fa-whatsapp"></i> Enviar QR
+                    </a>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else {
+        individualQrsBox.style.display = 'none';
+        individualQrsBox.innerHTML = '';
+      }
     }
   } else if (qrCard) {
     qrCard.style.display = 'none';

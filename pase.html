@@ -72,12 +72,12 @@
           </div>
 
           <div class="ticket-info-block">
-            <span class="ticket-label">Invitado Titular</span>
+            <span class="ticket-label" id="passHolderLabel">Invitado Titular</span>
             <h2 class="ticket-titular-name" id="passTitularName">--</h2>
           </div>
 
           <div class="ticket-info-block">
-            <span class="ticket-label">Acompañantes</span>
+            <span class="ticket-label" id="passDetailsLabel">Acompañantes</span>
             <div id="passCompanionsContainer"></div>
           </div>
 
@@ -100,6 +100,8 @@
           <button type="button" id="btnPassDownloadPng" class="btn btn-primary btn-block" style="margin-top: 14px;">
             <i class="fas fa-download"></i> Guardar Imagen del Pase (PNG)
           </button>
+
+          <div id="passMembersQrSection" class="pass-members-qr-section" style="display: none;"></div>
 
           <p class="ticket-venue-foot">
             <i class="fas fa-map-marker-alt" style="color: var(--color-gold);"></i>

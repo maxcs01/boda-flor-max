@@ -225,7 +225,10 @@
 
     ctx.fillStyle = '#9F7932';
     ctx.font = '700 16px Montserrat, Arial, sans-serif';
-    ctx.fillText(`INVITADO TITULAR  (${totalGuests} ${totalGuests === 1 ? 'PERSONA' : 'PERSONAS'})`, W / 2, y);
+    const headerTag = passData.isIndividual
+      ? 'PASE INDIVIDUAL DE INGRESO'
+      : `INVITADO TITULAR  (${totalGuests} ${totalGuests === 1 ? 'PERSONA' : 'PERSONAS'})`;
+    ctx.fillText(headerTag, W / 2, y);
 
     y += 38;
     ctx.fillStyle = '#2B2F2C';
@@ -236,23 +239,33 @@
     });
 
     y += 14;
-    ctx.fillStyle = '#5A7163';
-    ctx.font = '700 16px Montserrat, Arial, sans-serif';
-    ctx.fillText('ACOMPAÑANTES', W / 2, y);
-
-    y += 32;
-    if (allCompLines.length === 0) {
-      ctx.fillStyle = '#6B726D';
-      ctx.font = 'italic 20px Georgia, serif';
-      ctx.fillText('Entrada individual (Sin acompañantes)', W / 2, y);
+    if (passData.isIndividual && passData.subtitleNote) {
+      ctx.fillStyle = '#5A7163';
+      ctx.font = '700 16px Montserrat, Arial, sans-serif';
+      ctx.fillText('GRUPO FAMILIAR', W / 2, y);
       y += 32;
-    } else {
       ctx.fillStyle = '#2B2F2C';
-      ctx.font = '500 22px Montserrat, Arial, sans-serif';
-      allCompLines.forEach(line => {
-        ctx.fillText(line, W / 2, y);
+      ctx.font = 'italic 20px Georgia, serif';
+      ctx.fillText(passData.subtitleNote, W / 2, y);
+    } else {
+      ctx.fillStyle = '#5A7163';
+      ctx.font = '700 16px Montserrat, Arial, sans-serif';
+      ctx.fillText('ACOMPAÑANTES', W / 2, y);
+
+      y += 32;
+      if (allCompLines.length === 0) {
+        ctx.fillStyle = '#6B726D';
+        ctx.font = 'italic 20px Georgia, serif';
+        ctx.fillText('Entrada individual (Sin acompañantes)', W / 2, y);
         y += 32;
-      });
+      } else {
+        ctx.fillStyle = '#2B2F2C';
+        ctx.font = '500 22px Montserrat, Arial, sans-serif';
+        allCompLines.forEach(line => {
+          ctx.fillText(line, W / 2, y);
+          y += 32;
+        });
+      }
     }
 
     // Pie de tarjeta
@@ -289,6 +302,15 @@
     return `<ul class="pass-companions-list">${items}</ul>`;
   }
 
+  /**
+   * Genera link de WhatsApp para compartir el pase QR individual a un acompañante
+   */
+  function buildWhatsAppShareUrl(memberName, passUrl) {
+    const cleanName = String(memberName || '').trim();
+    const text = `¡Hola${cleanName ? ' ' + cleanName : ''}! ✨ Acá tenés tu Pase QR individual para entrar al casamiento de Flor y Max (06/02/2027):\n\n🎫 ${passUrl}\n\nPresentalo en la puerta al llegar 💍🥂`;
+    return `https://wa.me/?text=${encodeURIComponent(text)}`;
+  }
+
   global.PassUtils = {
     escapeHtml,
     buildPassUrl,
@@ -296,6 +318,7 @@
     extractPassIdFromScan,
     renderQrToCanvas,
     downloadPassCardPng,
-    renderCompanionsListHtml
+    renderCompanionsListHtml,
+    buildWhatsAppShareUrl
   };
 })(window);

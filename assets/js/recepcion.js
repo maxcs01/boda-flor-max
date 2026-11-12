@@ -331,19 +331,69 @@ function setPendingQueue(queue) {
   renderPendingBanner();
 }
 
+function getGroupMembers(group) {
+  if (group && Array.isArray(group.members) && group.members.length > 0) {
+    return group.members;
+  }
+  return [{
+    id: group.id || '',
+    name: group.titularName || '',
+    isTitular: true,
+    isChild: false,
+    checkedIn: Boolean(group.checkedIn),
+    checkIn: group.checkIn || '',
+    qrPayload: group.qrPayload || ''
+  }];
+}
+
+function recomputeGroupTotals(group) {
+  const members = getGroupMembers(group);
+  const checkedCount = members.filter(m => m.checkedIn).length;
+  group.totalGuests = group.totalGuests || members.length || 1;
+  group.checkedInCount = checkedCount;
+  group.checkedIn = members.length > 0 && checkedCount === members.length;
+  const titular = members.find(m => m.isTitular) || members[0];
+  if (titular) {
+    group.checkIn = titular.checkIn || group.checkIn || '';
+  }
+  return group;
+}
+
+function findGroupAndMember(passId) {
+  const target = String(passId || '').trim().toUpperCase();
+  if (!target) return null;
+  for (let i = 0; i < passesList.length; i++) {
+    const g = passesList[i];
+    const members = getGroupMembers(g);
+    const mMatch = members.find(m => String(m.id || '').toUpperCase() === target);
+    if (mMatch) return { group: g, member: mMatch };
+    if (String(g.id || '').toUpperCase() === target) {
+      return { group: g, member: members[0] };
+    }
+  }
+  return null;
+}
+
 function mergeWithPendingLocal(serverPasses) {
   const pending = getPendingQueue();
   if (pending.length === 0) return serverPasses;
 
-  const pendingMap = {};
-  pending.forEach(item => { pendingMap[item.passId] = item; });
+  const pendingById = {};
+  pending.forEach(item => {
+    const ids = Array.isArray(item.passIds) ? item.passIds : (item.passId ? [item.passId] : []);
+    ids.forEach(pid => { pendingById[String(pid).toUpperCase()] = item; });
+  });
 
   return serverPasses.map(p => {
-    const pend = pendingMap[p.id];
-    if (pend && !pend.undo && !p.checkedIn) {
-      return { ...p, checkedIn: true, checkIn: pend.label || 'Presente (Pendiente sync)' };
-    }
-    return p;
+    const members = getGroupMembers(p).map(m => {
+      const pend = pendingById[String(m.id || '').toUpperCase()];
+      if (pend && !pend.undo && !m.checkedIn) {
+        return { ...m, checkedIn: true, checkIn: pend.label || 'Presente (Pendiente sync)' };
+      }
+      return m;
+    });
+    const clone = { ...p, members };
+    return recomputeGroupTotals(clone);
   });
 }
 
@@ -360,6 +410,7 @@ async function syncPendingCheckins() {
   const remaining = [];
   for (let i = 0; i < queue.length; i++) {
     const item = queue[i];
+    const ids = Array.isArray(item.passIds) ? item.passIds : (item.passId ? [item.passId] : []);
     try {
       const res = await fetch(scriptUrl, {
         method: 'POST',
@@ -368,7 +419,8 @@ async function syncPendingCheckins() {
           action: 'checkin',
           pin: currentPin,
           sessionToken: currentSessionToken,
-          passId: item.passId,
+          passIds: ids,
+          passId: ids[0] || '',
           qrRaw: item.qrRaw || '',
           undo: Boolean(item.undo)
         })
@@ -395,7 +447,7 @@ function renderPendingBanner() {
 
   if (queue.length > 0) {
     banner.style.display = 'flex';
-    banner.querySelector('span').innerText = `${queue.length} presente(s) pendientes de subir a la planilla.`;
+    banner.querySelector('span').innerText = `${queue.length} registro(s) pendientes de subir a la planilla.`;
   } else {
     banner.style.display = 'none';
   }
@@ -407,10 +459,12 @@ function renderDashboard() {
   let checkedGroups = 0;
 
   passesList.forEach(p => {
-    const count = p.totalGuests || 1;
-    totalPeople += count;
-    if (p.checkedIn) {
-      checkedPeople += count;
+    const members = getGroupMembers(p);
+    const groupSize = Math.max(p.totalGuests || 0, members.length, 1);
+    const groupChecked = members.filter(m => m.checkedIn).length;
+    totalPeople += groupSize;
+    checkedPeople += groupChecked;
+    if (groupChecked >= members.length && members.length > 0) {
       checkedGroups++;
     }
   });
@@ -469,15 +523,22 @@ function renderGuestDirectory() {
   );
 
   const filtered = sorted.filter(p => {
-    if (currentFilter === 'pending' && p.checkedIn) return false;
-    if (currentFilter === 'entered' && !p.checkedIn) return false;
+    const members = getGroupMembers(p);
+    const checkedCount = members.filter(m => m.checkedIn).length;
+    const allIn = checkedCount >= members.length && members.length > 0;
+
+    if (currentFilter === 'pending' && allIn) return false;
+    if (currentFilter === 'entered' && checkedCount === 0) return false;
 
     if (!query) return true;
 
     const hayTitular = normalizeText(p.titularName).includes(query);
     const hayCode = (p.id || '').toLowerCase().includes(query);
-    const hayComp = (p.companions || []).some(c => normalizeText(c.name).includes(query));
-    return hayTitular || hayCode || hayComp;
+    const hayMember = members.some(m =>
+      normalizeText(m.name).includes(query) ||
+      String(m.id || '').toLowerCase().includes(query)
+    );
+    return hayTitular || hayCode || hayMember;
   });
 
   if (filtered.length === 0) {
@@ -487,20 +548,38 @@ function renderGuestDirectory() {
 
   const escape = window.PassUtils.escapeHtml;
   container.innerHTML = filtered.map(p => {
-    const compNames = (p.companions || []).map(c => escape(c.name) + (c.isChild ? ' (Menor)' : '')).join(', ');
-    const statusBadge = p.checkedIn
-      ? `<span class="dir-badge dir-badge-in"><i class="fas fa-check-double"></i> ${escape(p.checkIn)}</span>`
-      : `<span class="dir-badge dir-badge-pending">Falta llegar</span>`;
+    const members = getGroupMembers(p);
+    const checkedCount = members.filter(m => m.checkedIn).length;
+    const totalCount = Math.max(p.totalGuests || 0, members.length, 1);
+    const allIn = checkedCount >= members.length && members.length > 0;
+
+    let statusBadge = `<span class="dir-badge dir-badge-pending">Falta llegar</span>`;
+    if (allIn) {
+      const timeText = members.length === 1 && members[0].checkIn ? members[0].checkIn : `Completo (${checkedCount}/${totalCount})`;
+      statusBadge = `<span class="dir-badge dir-badge-in"><i class="fas fa-check-double"></i> ${escape(timeText)}</span>`;
+    } else if (checkedCount > 0) {
+      statusBadge = `<span class="dir-badge dir-badge-partial">${checkedCount}/${totalCount} presentes</span>`;
+    }
+
+    const membersChips = members.length > 1
+      ? `<div class="dir-members-pills">
+          ${members.map(m => `
+            <span class="dir-member-pill ${m.checkedIn ? 'is-in' : 'is-wait'}">
+              ${m.checkedIn ? '✓' : '○'} ${escape(m.name)}${m.isChild ? ' (Menor)' : ''}
+            </span>
+          `).join('')}
+        </div>`
+      : '';
 
     return `
-      <button type="button" class="directory-guest-row ${p.checkedIn ? 'row-entered' : ''}" onclick="openPassModalById('${escape(p.id)}')">
+      <button type="button" class="directory-guest-row ${allIn ? 'row-entered' : ''}" onclick="openPassModalById('${escape(p.id)}')">
         <div class="dir-row-main">
           <div class="dir-titular-name">${escape(p.titularName)}</div>
           <div class="dir-meta">
-            <span><i class="fas fa-users"></i> ${p.totalGuests} ${p.totalGuests === 1 ? 'persona' : 'personas'}</span>
+            <span><i class="fas fa-users"></i> ${totalCount} ${totalCount === 1 ? 'persona' : 'personas'}</span>
             ${p.id ? `<span class="dir-code">${escape(p.id)}</span>` : ''}
           </div>
-          ${compNames ? `<div class="dir-companions">↳ ${compNames}</div>` : ''}
+          ${membersChips}
         </div>
         <div class="dir-row-status">${statusBadge}</div>
       </button>
@@ -628,38 +707,43 @@ async function handleManualOrScannedCode(passId, qrRaw, autoPresent) {
     try { html5QrScanner.pause(true); } catch (e) {}
   }
 
-  let foundPass = passesList.find(p => (p.id || '').toUpperCase() === (passId || '').toUpperCase());
+  let match = findGroupAndMember(passId);
 
-  if (!foundPass && navigator.onLine && passId) {
+  if (!match && navigator.onLine && passId) {
     const scriptUrl = window.WEDDING_CONFIG ? window.WEDDING_CONFIG.googleAppsScriptUrl : '';
     if (scriptUrl) {
       try {
         const res = await fetch(`${scriptUrl}?action=getPass&id=${encodeURIComponent(passId)}`);
         const data = await res.json();
         if (data && data.found && data.pass) {
-          foundPass = data.pass;
-          passesList.push(foundPass);
+          const existingIdx = passesList.findIndex(p => String(p.id || '').toUpperCase() === String(data.pass.id || '').toUpperCase());
+          if (existingIdx >= 0) {
+            passesList[existingIdx] = data.pass;
+          } else {
+            passesList.push(data.pass);
+          }
           saveCache();
+          match = findGroupAndMember(passId);
         }
       } catch (e) {}
     }
   }
 
-  playBeepSound(Boolean(foundPass && !foundPass.checkedIn));
+  playBeepSound(Boolean(match && !match.member.checkedIn));
 
-  if (!foundPass) {
+  if (!match) {
     showNotFoundModal(passId);
     return;
   }
 
-  showPassResultModal(foundPass, autoPresent, qrRaw);
+  showPassResultModal(match.group, match.member, autoPresent, qrRaw);
 }
 
 window.openPassModalById = function(passId) {
-  const pass = passesList.find(p => (p.id || '').toUpperCase() === (passId || '').toUpperCase());
-  if (pass) {
+  const match = findGroupAndMember(passId);
+  if (match) {
     isHandlingScan = true;
-    showPassResultModal(pass, false, pass.qrPayload || '');
+    showPassResultModal(match.group, match.member, false, match.member.qrPayload || '');
   }
 };
 
@@ -712,68 +796,181 @@ function showNotFoundModal(passId) {
   `;
 }
 
-function showPassResultModal(pass, autoPresent, qrRaw) {
+function renderGroupMembersModalBox(group, highlightMemberId) {
+  const compContainer = document.getElementById('modalCompanionsContainer');
+  if (!compContainer) return;
+
+  const escape = window.PassUtils.escapeHtml;
+  const members = getGroupMembers(group);
+
+  if (members.length === 1) {
+    const only = members[0];
+    compContainer.innerHTML = `<p class="pass-no-companions">Entrada individual${only.isChild ? ' (Menor de 3 años)' : ''}</p>`;
+    return;
+  }
+
+  const rowsHtml = members.map(m => {
+    const isHighlighted = String(m.id || '').toUpperCase() === String(highlightMemberId || '').toUpperCase();
+    const roleTag = m.isTitular
+      ? '<span class="member-role-tag">Titular</span>'
+      : (m.isChild ? '<span class="member-role-tag is-child">Menor</span>' : '');
+    const rightControl = m.checkedIn
+      ? `<div class="member-status-right">
+           <span class="member-present-badge"><i class="fas fa-check"></i> ${escape(m.checkIn || 'Presente')}</span>
+           <button type="button" class="btn-member-undo js-member-action" data-member-id="${escape(m.id)}" data-undo="1" title="Quitar presente">
+             <i class="fas fa-undo"></i>
+           </button>
+         </div>`
+      : `<button type="button" class="btn-member-checkin js-member-action" data-member-id="${escape(m.id)}" data-undo="0">
+           <i class="fas fa-check"></i> Marcar Presente
+         </button>`;
+
+    return `
+      <div class="modal-member-check-row ${isHighlighted ? 'is-highlighted' : ''} ${m.checkedIn ? 'is-checked' : ''}">
+        <div class="member-info-left">
+          <div class="member-name-line">
+            <strong>${escape(m.name)}</strong> ${roleTag}
+          </div>
+          <span class="member-id-sub">${escape(m.id || '')}</span>
+        </div>
+        ${rightControl}
+      </div>
+    `;
+  }).join('');
+
+  compContainer.innerHTML = `<div class="modal-members-list">${rowsHtml}</div>`;
+
+  compContainer.querySelectorAll('.js-member-action').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mId = btn.getAttribute('data-member-id');
+      const isUndo = btn.getAttribute('data-undo') === '1';
+      if (!mId) return;
+      const target = getGroupMembers(group).find(m => m.id === mId);
+      submitMemberCheckin([mId], isUndo, '', true, target ? target.name : '');
+    });
+  });
+}
+
+function renderModalActionButtons(group, scannedMember) {
+  const actionsBox = document.getElementById('modalActionArea');
+  if (!actionsBox) return;
+
+  const escape = window.PassUtils.escapeHtml;
+  const members = getGroupMembers(group);
+  const targetMember = scannedMember || members[0];
+  const pendingAllIds = members.filter(m => !m.checkedIn && m.id).map(m => m.id);
+  const pendingOtherIds = members.filter(m => m.id !== targetMember.id && !m.checkedIn && m.id).map(m => m.id);
+
+  if (targetMember.checkedIn) {
+    let html = '';
+    if (pendingOtherIds.length > 0) {
+      html += `
+        <button type="button" id="btnMarkPendingGroup" class="btn btn-block btn-mark-all-group">
+          <i class="fas fa-users"></i> Marcar también a ${pendingOtherIds.length} pendiente(s) del grupo
+        </button>
+      `;
+    }
+    html += `
+      <button type="button" class="btn btn-primary btn-block" onclick="closeScanModal()">
+        <i class="fas fa-qrcode"></i> Escanear Siguiente
+      </button>
+      <button type="button" id="btnUndoTargetMember" class="btn-undo-checkin">
+        <i class="fas fa-undo"></i> Quitar marca de ${escape(targetMember.name)}
+      </button>
+    `;
+    actionsBox.innerHTML = html;
+
+    const btnOthers = document.getElementById('btnMarkPendingGroup');
+    if (btnOthers) {
+      btnOthers.addEventListener('click', () => {
+        submitMemberCheckin(pendingOtherIds, false, '', true, `Grupo de ${group.titularName}`);
+      });
+    }
+    const btnUndo = document.getElementById('btnUndoTargetMember');
+    if (btnUndo) {
+      btnUndo.addEventListener('click', () => {
+        submitMemberCheckin([targetMember.id], true, '', members.length > 1, targetMember.name);
+      });
+    }
+    return;
+  }
+
+  let html = '';
+  if (pendingAllIds.length > 0) {
+    const label = pendingAllIds.length === 1
+      ? `MARCAR PRESENTE (${escape(targetMember.name)})`
+      : `MARCAR PRESENTE A TODOS (${pendingAllIds.length} personas)`;
+    html += `
+      <button type="button" id="btnConfirmCheckin" class="btn btn-block btn-confirm-entry">
+        <i class="fas fa-check-double"></i> ${label}
+      </button>
+    `;
+  }
+  html += `
+    <button type="button" class="btn btn-secondary btn-block" style="margin-top: 10px;" onclick="closeScanModal()">
+      Cerrar
+    </button>
+  `;
+  actionsBox.innerHTML = html;
+
+  const btnConfirm = document.getElementById('btnConfirmCheckin');
+  if (btnConfirm) {
+    btnConfirm.addEventListener('click', () => {
+      submitMemberCheckin(pendingAllIds, false, '', false, group.titularName);
+    });
+  }
+}
+
+function showPassResultModal(group, scannedMember, autoPresent, qrRaw) {
   const modal = document.getElementById('scanResultModal');
   const headerBanner = document.getElementById('modalStatusBanner');
   const titularEl = document.getElementById('modalTitularName');
   const totalEl = document.getElementById('modalTotalBadge');
-  const compContainer = document.getElementById('modalCompanionsContainer');
   const codeEl = document.getElementById('modalPassCode');
-  const actionsBox = document.getElementById('modalActionArea');
 
-  activePassInModal = pass;
+  const members = getGroupMembers(group);
+  const targetMember = scannedMember || members[0];
+  activePassInModal = { group, member: targetMember };
   if (!modal) return;
   modal.style.display = 'flex';
 
   const escape = window.PassUtils.escapeHtml;
-  titularEl.innerText = pass.titularName;
-  const count = pass.totalGuests || 1;
-  totalEl.innerText = `${count} ${count === 1 ? 'PERSONA' : 'PERSONAS'}`;
-  compContainer.innerHTML = window.PassUtils.renderCompanionsListHtml(pass.companions || []);
-  codeEl.innerText = pass.id;
+  titularEl.innerText = autoPresent || !targetMember.isTitular
+    ? targetMember.name
+    : group.titularName;
 
-  // Caso 1: Ya estaba marcado como Presente anteriormente (protección contra doble uso)
-  if (pass.checkedIn) {
+  const count = Math.max(group.totalGuests || 0, members.length, 1);
+  totalEl.innerText = count === 1
+    ? '1 PERSONA'
+    : (targetMember.isTitular ? `${count} PERSONAS EN GRUPO` : `RESERVA DE ${group.titularName.toUpperCase()} (${count})`);
+  codeEl.innerText = targetMember.id || group.id;
+
+  renderGroupMembersModalBox(group, targetMember.id);
+
+  // Caso 1: Esta persona ya estaba registrada como Presente
+  if (targetMember.checkedIn) {
     headerBanner.className = 'modal-status-banner banner-warning';
-    headerBanner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> YA REGISTRADO (${escape(pass.checkIn)})`;
-    actionsBox.innerHTML = `
-      <button type="button" class="btn btn-primary btn-block" onclick="closeScanModal()">
-        <i class="fas fa-qrcode"></i> Escanear Siguiente
-      </button>
-      <button type="button" class="btn-undo-checkin" onclick="submitCheckinAction(true, '')">
-        <i class="fas fa-undo"></i> Quitar marca de presente (por error)
-      </button>
-    `;
+    headerBanner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${escape(targetMember.name.toUpperCase())} YA REGISTRADO (${escape(targetMember.checkIn)})`;
+    renderModalActionButtons(group, targetMember);
     return;
   }
 
-  // Caso 2: Escaneado con la cámara QR -> Registro AUTOMÁTICO en Excel/Google Sheets
+  // Caso 2: Escaneado con la cámara QR -> Registro AUTOMÁTICO de esta persona en Excel
   if (autoPresent) {
     headerBanner.className = 'modal-status-banner banner-valid';
-    headerBanner.innerHTML = '<span class="spinner"></span> REGISTRANDO PRESENTE EN PLANILLA...';
-    actionsBox.innerHTML = `
-      <button type="button" class="btn btn-primary btn-block" onclick="closeScanModal()">
-        <i class="fas fa-qrcode"></i> Escanear Siguiente
-      </button>
-      <button type="button" class="btn-undo-checkin" onclick="submitCheckinAction(true, '')">
-        <i class="fas fa-undo"></i> Deshacer presente (por error)
-      </button>
-    `;
-    submitCheckinAction(false, qrRaw, true);
+    headerBanner.innerHTML = `<span class="spinner"></span> REGISTRANDO A ${escape(targetMember.name.toUpperCase())}...`;
+    renderModalActionButtons(group, targetMember);
+    submitMemberCheckin([targetMember.id], false, qrRaw, true, targetMember.name);
     return;
   }
 
-  // Caso 3: Abierto manualmente desde la lista alfabética (confirmación en 1 toque)
+  // Caso 3: Abierto manualmente desde el directorio
+  const checkedCount = members.filter(m => m.checkedIn).length;
   headerBanner.className = 'modal-status-banner banner-valid';
-  headerBanner.innerHTML = '<i class="fas fa-user-check"></i> INVITADO CONFIRMADO';
-  actionsBox.innerHTML = `
-    <button type="button" id="btnConfirmCheckin" class="btn btn-block btn-confirm-entry" onclick="submitCheckinAction(false, '', false)">
-      <i class="fas fa-check"></i> MARCAR PRESENTE (${count} ${count === 1 ? 'persona' : 'personas'})
-    </button>
-    <button type="button" class="btn btn-secondary btn-block" style="margin-top: 10px;" onclick="closeScanModal()">
-      Cancelar
-    </button>
-  `;
+  headerBanner.innerHTML = checkedCount > 0
+    ? `<i class="fas fa-user-check"></i> INGRESO PARCIAL (${checkedCount} de ${count})`
+    : '<i class="fas fa-user-check"></i> INVITADO CONFIRMADO';
+  renderModalActionButtons(group, targetMember);
 }
 
 window.closeScanModal = function() {
@@ -788,12 +985,12 @@ window.closeScanModal = function() {
 };
 
 /**
- * Envía el registro de Presente a Google Sheets (con soporte automático y cola offline)
+ * Envía el registro de Presente a Google Sheets (individual o grupal, con cola offline)
  */
-window.submitCheckinAction = async function(isUndo, qrRaw, stayOpenAfterSave) {
-  if (!activePassInModal) return;
+async function submitMemberCheckin(passIds, isUndo, qrRaw, stayOpenAfterSave, displayName) {
+  if (!activePassInModal || !Array.isArray(passIds) || passIds.length === 0) return;
 
-  const pass = activePassInModal;
+  const { group } = activePassInModal;
   const headerBanner = document.getElementById('modalStatusBanner');
   const btn = document.getElementById('btnConfirmCheckin');
   if (btn) {
@@ -814,7 +1011,8 @@ window.submitCheckinAction = async function(isUndo, qrRaw, stayOpenAfterSave) {
           action: 'checkin',
           pin: currentPin,
           sessionToken: currentSessionToken,
-          passId: pass.id,
+          passIds: passIds,
+          passId: passIds[0],
           qrRaw: qrRaw || '',
           undo: Boolean(isUndo)
         })
@@ -838,8 +1036,7 @@ window.submitCheckinAction = async function(isUndo, qrRaw, stayOpenAfterSave) {
       if (json && (json.status === 'success' || json.status === 'already_checked_in')) {
         syncedOk = true;
         if (json.pass) {
-          pass.checkedIn = Boolean(json.pass.checkedIn);
-          pass.checkIn = json.pass.checkIn || '';
+          Object.assign(group, json.pass);
         }
       }
     } catch (e) {
@@ -848,31 +1045,59 @@ window.submitCheckinAction = async function(isUndo, qrRaw, stayOpenAfterSave) {
   }
 
   if (!syncedOk) {
-    pass.checkedIn = !isUndo;
-    pass.checkIn = isUndo ? '' : `${nowLabel} (Local)`;
-    const queue = getPendingQueue().filter(item => item.passId !== pass.id);
-    queue.push({ passId: pass.id, qrRaw: qrRaw || '', undo: Boolean(isUndo), label: pass.checkIn });
+    const idSet = {};
+    passIds.forEach(pid => { idSet[String(pid).toUpperCase()] = true; });
+    getGroupMembers(group).forEach(m => {
+      if (idSet[String(m.id || '').toUpperCase()]) {
+        m.checkedIn = !isUndo;
+        m.checkIn = isUndo ? '' : `${nowLabel} (Local)`;
+      }
+    });
+    recomputeGroupTotals(group);
+
+    const queue = getPendingQueue().filter(item => {
+      const existingIds = Array.isArray(item.passIds) ? item.passIds : [item.passId];
+      return !existingIds.some(eid => idSet[String(eid || '').toUpperCase()]);
+    });
+    queue.push({ passIds, passId: passIds[0], qrRaw: qrRaw || '', undo: Boolean(isUndo), label: isUndo ? '' : `${nowLabel} (Local)` });
     setPendingQueue(queue);
   }
+
+  // Re-vincular referencia actualizada del miembro activo
+  const currentTargetId = activePassInModal.member ? activePassInModal.member.id : group.id;
+  const refreshedMember = getGroupMembers(group).find(m => m.id === currentTargetId) || getGroupMembers(group)[0];
+  activePassInModal.member = refreshedMember;
 
   saveCache();
   renderDashboard();
 
-  if (stayOpenAfterSave && activePassInModal === pass && !isUndo) {
+  const label = displayName || (refreshedMember && refreshedMember.name) || group.titularName;
+
+  if (stayOpenAfterSave && activePassInModal && activePassInModal.group === group) {
+    renderGroupMembersModalBox(group, refreshedMember.id);
+    renderModalActionButtons(group, refreshedMember);
     if (headerBanner) {
       headerBanner.className = 'modal-status-banner banner-valid';
-      headerBanner.innerHTML = syncedOk
-        ? `<i class="fas fa-check-circle"></i> PRESENTE REGISTRADO EN EXCEL`
-        : `<i class="fas fa-check-circle"></i> PRESENTE GUARDADO (PENDIENTE SYNC)`;
+      if (isUndo) {
+        headerBanner.innerHTML = `<i class="fas fa-undo"></i> Marca quitada: ${escapeHtmlShort(label)}`;
+      } else {
+        headerBanner.innerHTML = syncedOk
+          ? `<i class="fas fa-check-circle"></i> PRESENTE REGISTRADO: ${escapeHtmlShort(label.toUpperCase())}`
+          : `<i class="fas fa-check-circle"></i> GUARDADO OFFLINE: ${escapeHtmlShort(label.toUpperCase())}`;
+      }
     }
     if (window.showToast) {
-      window.showToast(`¡Presente: ${pass.titularName}!`);
+      window.showToast(isUndo ? `Marca quitada: ${label}` : `¡Presente: ${label}!`);
     }
     return;
   }
 
   if (window.showToast) {
-    window.showToast(isUndo ? 'Presencia revertida' : `¡Presente confirmado: ${pass.titularName}!`);
+    window.showToast(isUndo ? 'Presencia revertida' : `¡Presente confirmado: ${label}!`);
   }
   closeScanModal();
-};
+}
+
+function escapeHtmlShort(s) {
+  return window.PassUtils ? window.PassUtils.escapeHtml(s) : String(s || '');
+}

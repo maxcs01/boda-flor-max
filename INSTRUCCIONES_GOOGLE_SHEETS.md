@@ -1,22 +1,26 @@
 # INSTRUÇÕES DE ATUALIZAÇÃO NO GOOGLE SHEETS
-## Boda Flor & Max — Versão 5.1 (App Validador Exclusivo + QR Assinado + E-mail)
+## Boda Flor & Max — Versão 5.3 (QR Individual por Pessoa + App Validador Exclusivo + E-mail)
 
 Planilha oficial: 👉 [Abrir Google Sheets](https://docs.google.com/spreadsheets/d/15U2O1gAzXvVkAWobayX6wO_MYeyNyJu3WC-Elx4Xn4U/edit?gid=0#gid=0)
 
 ---
 
-### 📌 Novidades da Versão 5.1:
-1. **QR Code Exclusivo do App Validador (Câmeras comuns não leem os dados)**:
+### 📌 Novidades da Versão 5.3:
+1. **QR Individual por Pessoa (Titular e Cada Acompanhante `↳`)**:
+   - Agora **cada pessoa confirmada** (o titular e cada acompanhante) recebe seu próprio código `FM-XXXXXX` na Coluna K, seu link pessoal (`pase.html?id=...`) na Coluna L e registro próprio na Coluna M (`Presencia / Check-in`).
+   - Se uma família ou casal chegar em horários separados, basta o titular tocar no botão **"Enviar QR por WhatsApp"** (na tela de confirmação ou dentro do próprio `pase.html`) para repassar o QR individual do acompanhante!
+   - No **App Validador (`recepcion.html`)**, ao escanear um QR individual, somente aquela pessoa é marcada como `Presente`, exibindo logo abaixo botões de 1 toque caso os outros membros do mesmo grupo também estejam chegando juntos.
+2. **QR Code Exclusivo do App Validador (Câmeras comuns não leem os dados)**:
    - O QR contém um token criptografado assinado (`BODA-FM|ID|ASSINATURA`). Se uma pessoa qualquer apontar a câmera normal do celular para o QR, nenhum site abre e nenhum nome aparece.
-   - O convidado recebe o **link para abrir e exibir o QR** no e-mail e na mensagem do WhatsApp para os noivos (`pase.html?id=...`).
-2. **App Validador Instalável (PWA) com Sessão Única (`recepcion.html`)**:
+   - O convidado recebe o **link para abrir e exibir o QR** no e-mail e na mensagem curta do WhatsApp para os noivos (`pase.html?id=...`).
+3. **App Validador Instalável (PWA) com Sessão Única (`recepcion.html`)**:
    - Acesse `https://bodaflor-max.netlify.app/recepcion.html` no celular de quem ficará na porta e toque em **"Instalar"** (ou *"Adicionar à tela inicial"* no iPhone) para usar como um **aplicativo próprio**.
    - **PIN padrão da portaria:** `2103` *(alterável em `RECEPTION_PIN` dentro do [`google-apps-script.js`](file:///C:/Users/Windows/.gemini/antigravity/scratch/boda-flor-y-max/google-apps-script.js))*.
    - **Somente 1 pessoa/aparelho valida por vez**: ao fazer login com o PIN, a sessão fica travada para aquele celular. Caso precise trocar de aparelho, clique em *"Transferir acceso a este celular"* ou use o menu **`💌 Boda Flor & Max > 🔓 Liberar Dispositivo Activo de Portería`** na planilha.
-3. **Check-in Automático ("Presente") no Excel / Google Sheets**:
-   - Assim que o recepcionista escaneia o QR pelo App, aparecem na tela o **Nome e Sobrenome do titular**, os **Acompanhantes** (se houver) e **automaticamente** grava **`Presente - HH:mm hs`** na **Coluna M (`Presencia / Check-in`)**.
-4. **Correção do Disparo Automático de E-mail**:
-   - E-mail corrigido já incluindo a imagem do QR Code embutida + botão com o link para abrir o passe QR.
+4. **Check-in Individual e Grupal Automático no Excel / Google Sheets**:
+   - Assim que o recepcionista escaneia o QR pelo App, aparece na tela o **Nome e Sobrenome da pessoa** e o status de todo o grupo, gravando **`Presente - HH:mm hs`** na **Coluna M (`Presencia / Check-in`)** na linha exata daquela pessoa.
+5. **Disparo Automático de E-mail com QRs Individuais**:
+   - E-mail corrigido incluindo a imagem do QR do titular e a lista de links individuais para cada acompanhante (se houver).
 
 ---
 
@@ -48,11 +52,13 @@ Planilha oficial: 👉 [Abrir Google Sheets](https://docs.google.com/spreadsheet
 
 ---
 
-### 🎫 Passo 4: Gerar QRs e Enviar E-mails para Quem Já Confirmou Antes
+### 🎫 Passo 4: Gerar QRs Individuais e Enviar E-mails para Quem Já Confirmou Antes
 1. Volte para a aba da sua planilha no Google Sheets e **recarregue a página (F5)**.
 2. Aparecerá o menu **`💌 Boda Flor & Max`** no topo da planilha.
-3. Clique em **`💌 Boda Flor & Max`** > **`📧 Enviar E-mail con QR a Confirmados Pendientes`**.
-4. Isso gera os Pases QR que ainda faltarem (Colunas K e L) e dispara automaticamente o e-mail com o QR para **todos os convidados já registrados** que deixaram e-mail na Coluna C (marcando o status na **Coluna N `Estado E-mail`** para nunca enviar repetido!).
+3. Para criar automaticamente os **QRs individuais que faltarem para acompanhantes e titulares já cadastrados**, clique em:
+   **`💌 Boda Flor & Max`** > **`🎫 Generar QRs Individuales Faltantes`**.
+4. Para enviar os e-mails com Pase QR a quem deixou e-mail e ainda está pendente na Coluna N, clique em:
+   **`💌 Boda Flor & Max`** > **`📧 Enviar E-mail con QR a Confirmados Pendientes`** *(nunca envia repetido para quem já tem `✅ Enviado` na Coluna N)*.
 
 ---
 

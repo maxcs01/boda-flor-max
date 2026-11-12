@@ -2208,3 +2208,309 @@ textarea.form-control {
   margin-bottom: 16px;
   text-align: center;
 }
+
+/* QRs individuales para acompañantes (confirmar.html & pase.html) */
+.individual-qrs-box {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(197, 160, 89, 0.45);
+  text-align: left;
+}
+
+.individual-qrs-header {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 10px;
+}
+
+.individual-qrs-header span {
+  display: block;
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-top: 3px;
+}
+
+.individual-qrs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.individual-qr-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #FAF8F3;
+  border: 1px solid #EAE2D0;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.individual-qr-info strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--color-dark);
+}
+
+.individual-qr-code {
+  font-size: 0.74rem;
+  color: var(--color-gold-dark);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.individual-qr-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-mini-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #C5A059;
+  background: #FFF;
+  color: #8C6A23;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-share-wa-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: #1B8A4B;
+  color: #FFF !important;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pass-members-qr-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(197, 160, 89, 0.5);
+  text-align: left;
+}
+
+.pass-members-header {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 12px;
+}
+
+.pass-members-header p {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+.pass-members-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.individual-qr-item {
+  background: #FAF8F3;
+  border: 1px solid #E5DCCB;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.individual-qr-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.individual-qr-id {
+  font-size: 0.78rem;
+  color: var(--color-gold-dark);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.pass-member-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pass-member-pill.is-present {
+  background: #E8F5E9;
+  color: #1B5E20;
+}
+
+.pass-member-pill.is-pending {
+  background: #F4EFE6;
+  color: #7D6B4F;
+}
+
+.individual-qr-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  background: #FFF;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #EFEAE0;
+  margin-bottom: 10px;
+}
+
+.individual-qr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* App Recepción: estados parciales y check-in individual en modal */
+.dir-badge-partial {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.dir-members-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.dir-member-pill {
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid #E5E7EB;
+  background: #F9FAFB;
+  color: #4B5563;
+}
+
+.dir-member-pill.is-in {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #065F46;
+}
+
+.modal-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-member-check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+}
+
+.modal-member-check-row.is-highlighted {
+  border-color: #C5A059;
+  background: #FFFDF7;
+}
+
+.modal-member-check-row.is-checked {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+}
+
+.member-info-left {
+  min-width: 0;
+  flex: 1;
+}
+
+.member-name-line {
+  font-size: 0.9rem;
+  color: #1F2937;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.member-role-tag {
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #F3E8CE;
+  color: #7C5C1D;
+  font-weight: 700;
+}
+
+.member-role-tag.is-child {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+
+.member-id-sub {
+  font-size: 0.72rem;
+  color: #6B7280;
+  letter-spacing: 0.04em;
+}
+
+.member-status-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.member-present-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #065F46;
+}
+
+.btn-member-checkin {
+  background: #2C5E3B;
+  color: #FFF;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-member-undo {
+  background: #FFF;
+  color: #991B1B;
+  border: 1px solid #FCA5A5;
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.btn-mark-all-group {
+  background: #1E5631;
+  color: #FFF;
+  border: none;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
